@@ -7,7 +7,7 @@ from logic.models import Departments, Organizations
 class OrganizationSerializer(ModelSerializer):
     class Meta:
         model = Organizations
-        fields = ['name']
+        fields = ['id','name']
 
 class DepartmentSerializer(ModelSerializer):
     # org_id = serializers.SerializerMethodField

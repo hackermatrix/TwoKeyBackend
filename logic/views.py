@@ -64,6 +64,9 @@ class DeptView(generics.ListCreateAPIView,ViewSet):
         return  self.create(request, *args, **kwargs)
 
 
+# class UserViewSet(generics.GenericAPIView,ViewSet):
+
+
     
 class TestView(APIView):
     authentication_classes=[SupabaseAuthBackend]
