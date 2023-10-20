@@ -6,10 +6,10 @@ from django.db import models
 
 class Organizations(models.Model):
     id = models.UUIDField(primary_key=True,default=uuid.uuid4)
-    name = models.CharField(blank=True, null=True)
+    name = models.CharField(blank=True, null=True,unique=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'organizations'
 
 class Departments(models.Model):
@@ -24,13 +24,14 @@ class Departments(models.Model):
 
 class UserInfo(models.Model):
     id = models.UUIDField(primary_key=True)
-    org = models.ForeignKey(Organizations, models.DO_NOTHING)
+    email = models.EmailField(default=None)
+    org = models.ForeignKey(Organizations, on_delete=models.CASCADE,default=None)
     role_priv = models.CharField(max_length=20,default="employee")
-    dept = models.ForeignKey(Departments, models.DO_NOTHING)
+    dept = models.ForeignKey(Departments, models.DO_NOTHING,default=None)
     is_approved = models.BooleanField(default=False)
     is_authenticated = models.BooleanField(default=False)
     # temp=models.CharField(max_length=10)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'user_info'

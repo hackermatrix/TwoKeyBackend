@@ -1,4 +1,5 @@
 from django.db import models
+from logic.models import *
 
 
 
@@ -6,7 +7,7 @@ class Users(models.Model):
     instance_id = models.UUIDField(blank=True, null=True)
     id = models.UUIDField(primary_key=True)
     aud = models.CharField(max_length=255, blank=True, null=True)
-    role = models.CharField(max_length=255, blank=True, null=True)
+    role = models.CharField(max_length=255, blank=True, null=True,default='employee')
     email = models.CharField(unique=True, max_length=255, blank=True, null=True)
     encrypted_password = models.CharField(max_length=255, blank=True, null=True)
     email_confirmed_at = models.DateTimeField(blank=True, null=True)
@@ -37,8 +38,11 @@ class Users(models.Model):
     reauthentication_sent_at = models.DateTimeField(blank=True, null=True)
     is_sso_user = models.BooleanField(db_comment='Auth: Set this column to true when the account comes from SSO. These accounts can have duplicate emails.')
     deleted_at = models.DateTimeField(blank=True, null=True)
+    org = models.ForeignKey(Organizations,on_delete=models.CASCADE,default=None,null=True)
+    is_approved = models.BooleanField(default=False)
+    is_authenticated = models.BooleanField(default=False)
     class Meta:
-        managed = False
+        managed = True
         db_table = 'auth\".\"users'
         
         db_table_comment = 'Auth: Stores user login data within a secure schema.'

@@ -19,6 +19,6 @@ class DepartmentSerializer(ModelSerializer):
 class UserInfoSerializer(ModelSerializer):
     class Meta:
         model = UserInfo
-        fields = ['id','dept','role_priv']
+        fields = ['id','email','dept','role_priv']
 
     

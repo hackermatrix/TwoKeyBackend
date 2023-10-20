@@ -7,6 +7,7 @@ from logic.models import UserInfo
 from rest_framework import status
 from rest_framework.response import Response
 from backend.settings import supabase_secret
+from authenticate.models import Users
 
 class SupabaseAuthBackend(BaseBackend):
     def authenticate(self, request):
@@ -26,6 +27,7 @@ class SupabaseAuthBackend(BaseBackend):
             # Find a Django user that corresponds to the user
             # print("BOOm")
             user = UserInfo.objects.get(id=sub)
+            # user = Users.objects.get(id=sub)
             user.is_authenticated = True
             return (user, None)
 
@@ -40,5 +42,6 @@ class SupabaseAuthBackend(BaseBackend):
     def get_user(self, user_id):
         try:
             return UserInfo.objects.get(id=user_id)
+            # return Users.objects.get(id=user_id)
         except UserInfo.DoesNotExist:
             return None

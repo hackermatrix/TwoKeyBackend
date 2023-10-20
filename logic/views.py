@@ -10,6 +10,9 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import generics
 from rest_framework.decorators import action,permission_classes
+
+from authenticate.models import Users
+from authenticate.serializers import UsersSerializer
 from .custom_perm_classes import *
 from backend.supabase_auth import SupabaseAuthBackend
 from logic.models import *
@@ -25,7 +28,6 @@ class OrgView(mixins.ListModelMixin,mixins.CreateModelMixin,GenericViewSet):
     serializer_class = OrganizationSerializer
     
     # @action(detail=False, methods=['GET'],permission_classes=[SuperadminRequired])
-    # @permission_classes([SuperadminRequired])
     def list_orgs(self, request, *args, **kwargs):
         print("perm",self.permission_classes)
         self.queryset = Organizations.objects.all()
@@ -42,6 +44,7 @@ class OrgView(mixins.ListModelMixin,mixins.CreateModelMixin,GenericViewSet):
             self.permission_classes = [SuperadminRequired]
         return super().get_permissions()
     
+
 
 
     
@@ -79,17 +82,22 @@ class DeptView(mixins.ListModelMixin,mixins.CreateModelMixin,GenericViewSet):
             self.permission_classes = [OrgadminRequired]
         return super().get_permissions()
 
+
+
 # User ViewSet
 class UserViewSet(mixins.ListModelMixin,mixins.UpdateModelMixin,GenericViewSet):
-    queryset = UserInfo.objects.all() 
-    authentication_classes = [SupabaseAuthBackend]
+    # queryset = UserInfo.objects.all() 
     serializer_class = UserInfoSerializer
+    queryset = Users.objects.all()
+    authentication_classes = [SupabaseAuthBackend]
+    # serializer_class = UsersSerializer
     lookup_field = 'id'
 
     # @action(detail=True, methods=['GET'], permission_classes=[OrgadminRequired])
     def list_users(self, request, *args, **kwargs):
         org_id = request.user.org_id
         self.queryset = UserInfo.objects.filter(org=org_id)
+        # self.queryset = Users.objects.filter(org=org_id)
         return self.list(request, *args, **kwargs)
     
     # @action(detail=False,methods=['PUT'],permission_classes=[OrgadminRequired])
