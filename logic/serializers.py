@@ -14,11 +14,11 @@ class DepartmentSerializer(ModelSerializer):
 
     class Meta:
         model =  Departments
-        fields = ['name']
+        fields = ['id','name']
 
 class UserInfoSerializer(ModelSerializer):
     class Meta:
         model = UserInfo
-        fields = ['id','email','dept','role_priv']
+        fields = ['id','email','dept','role_priv','is_approved']
 
     

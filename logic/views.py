@@ -86,9 +86,9 @@ class DeptView(mixins.ListModelMixin,mixins.CreateModelMixin,GenericViewSet):
 
 # User ViewSet
 class UserViewSet(mixins.ListModelMixin,mixins.UpdateModelMixin,GenericViewSet):
-    # queryset = UserInfo.objects.all() 
+    queryset = UserInfo.objects.all() 
     serializer_class = UserInfoSerializer
-    queryset = Users.objects.all()
+    # queryset = Users.objects.all()
     authentication_classes = [SupabaseAuthBackend]
     # serializer_class = UsersSerializer
     lookup_field = 'id'
@@ -103,7 +103,8 @@ class UserViewSet(mixins.ListModelMixin,mixins.UpdateModelMixin,GenericViewSet):
     # @action(detail=False,methods=['PUT'],permission_classes=[OrgadminRequired])
     def elevate(self,request,*args,**kwargs):
         pk = kwargs.get('pk')
-        return self.partial_update(request,*args,**kwargs)
+        resp = self.partial_update(request,*args,**kwargs)
+        return resp
     
     def get_permissions(self):
         if self.action == "list_users":
