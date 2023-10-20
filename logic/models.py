@@ -35,3 +35,11 @@ class UserInfo(models.Model):
     class Meta:
         managed = True
         db_table = 'user_info'
+
+
+class Role(models.Model):
+    id = models.UUIDField(primary_key=True,default=uuid.uuid4)
+    role = models.CharField(max_length=20)
+
+    class Meta:
+        db_table = 'user_roles'

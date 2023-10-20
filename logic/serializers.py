@@ -1,7 +1,7 @@
 from rest_framework.serializers import ModelSerializer
 from rest_framework import serializers
 
-from logic.models import Departments, Organizations, UserInfo
+from logic.models import Departments, Organizations, Role, UserInfo
 
 
 class OrganizationSerializer(ModelSerializer):
@@ -16,9 +16,15 @@ class DepartmentSerializer(ModelSerializer):
         model =  Departments
         fields = ['id','name']
 
+class RoleSerializer(ModelSerializer):
+    class Meta:
+        model = Role
+        fields = "__all__"
 class UserInfoSerializer(ModelSerializer):
+    # role = RoleSerializer
     class Meta:
         model = UserInfo
         fields = ['id','email','dept','role_priv','is_approved']
+
 
     

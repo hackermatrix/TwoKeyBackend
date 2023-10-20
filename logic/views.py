@@ -100,6 +100,19 @@ class UserViewSet(mixins.ListModelMixin,mixins.UpdateModelMixin,GenericViewSet):
         # self.queryset = Users.objects.filter(org=org_id)
         return self.list(request, *args, **kwargs)
     
+    # Checking the Role's Existance
+    def partial_update(self, request, *args, **kwargs):
+        serializer = RoleSerializer(data=request.data['role_priv'],partial=True)
+        kk = serializer.is_valid()
+        print("yoyoy",kk)
+
+        role = request.data['role_priv']
+        try:
+            Role.objects.get(role=role)
+        except Exception as e:
+            return Response({'error':str(e)},status=status.HTTP_400_BAD_REQUEST)
+        return super().partial_update(request, *args, **kwargs)
+    
     # @action(detail=False,methods=['PUT'],permission_classes=[OrgadminRequired])
     def elevate(self,request,*args,**kwargs):
         pk = kwargs.get('pk')
@@ -114,7 +127,32 @@ class UserViewSet(mixins.ListModelMixin,mixins.UpdateModelMixin,GenericViewSet):
         return super().get_permissions()
 
 
+# Roles Viewset
+class RolesViewset(mixins.ListModelMixin,
+                   mixins.CreateModelMixin,
+                   mixins.UpdateModelMixin,
+                   mixins.DestroyModelMixin,
+                   GenericViewSet):
+    authentication_classes = [SupabaseAuthBackend]
+    queryset = Role.objects.all()
+    permission_classes=[AllowAny]
+    serializer_class=RoleSerializer
+    lookup_field = 'id'
 
+    def list_roles(self,request):
+        return self.list(request)
+    def create_roles(self,request):
+        return self.create(request)
+    def update_roles(self, request):
+        return self.update(request)
+    def delete_roles(self,request,*args,**kwargs):
+        kwargs.get('pk')
+        return self.destroy(request,*args,**kwargs)
+    
+    # def get_permissions(self):
+    #     if self.action == 'list_roles':
+    #         self.permission_classes = [OrgadminRequired]
+    #     return super().get_permissions()
     
 
     

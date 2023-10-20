@@ -38,9 +38,9 @@ class Users(models.Model):
     reauthentication_sent_at = models.DateTimeField(blank=True, null=True)
     is_sso_user = models.BooleanField(db_comment='Auth: Set this column to true when the account comes from SSO. These accounts can have duplicate emails.')
     deleted_at = models.DateTimeField(blank=True, null=True)
-    org = models.ForeignKey(Organizations,on_delete=models.CASCADE,default=None,null=True)
-    is_approved = models.BooleanField(default=False)
-    is_authenticated = models.BooleanField(default=False)
+    # org = models.ForeignKey(Organizations,on_delete=models.CASCADE,default=None,null=True)
+    # is_approved = models.BooleanField(default=False)
+    # is_authenticated = models.BooleanField(default=False)
     class Meta:
         managed = True
         db_table = 'auth\".\"users'
