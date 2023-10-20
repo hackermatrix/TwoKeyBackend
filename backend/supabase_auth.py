@@ -4,6 +4,8 @@ from django.contrib.auth.base_user import AbstractBaseUser
 from django.http.request import HttpRequest
 import jwt
 from logic.models import UserInfo
+from rest_framework import status
+from rest_framework.response import Response
 from backend.settings import supabase_secret
 
 class SupabaseAuthBackend(BaseBackend):
@@ -22,12 +24,13 @@ class SupabaseAuthBackend(BaseBackend):
             sub = verified.get('sub')
 
             # Find a Django user that corresponds to the user
-            user = UserInfo.objects.get_by_pk(sub)
+            # print("BOOm")
+            user = UserInfo.objects.get(id=sub)
             user.is_authenticated = True
             return (user, None)
 
         except jwt.exceptions.InvalidSignatureError:
-            return None
+            return Response({'error':'Token Expired'},status.HTTP_401_UNAUTHORIZED)
 
     def authenticate_header(self, request):
         # This method is used to include authentication information in the response.
@@ -36,6 +39,6 @@ class SupabaseAuthBackend(BaseBackend):
 
     def get_user(self, user_id):
         try:
-            return UserInfo.objects.get_by_pk(user_id)
+            return UserInfo.objects.get(id=user_id)
         except UserInfo.DoesNotExist:
             return None

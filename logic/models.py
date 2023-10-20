@@ -1,3 +1,6 @@
+from django.db import models
+
+# Create your models here.
 import uuid
 from django.db import models
 
@@ -18,19 +21,15 @@ class Departments(models.Model):
         managed = True
         db_table = 'departments'
 
-# class OrgAdmins(models.Model):
-#     id = models.UUIDField(primary_key=True)
-#     org = models.ForeignKey(Organizations, models.DO_NOTHING)
-#     is_authenticated = models.BooleanField(default=False)
-#     class Meta:
-#         db_table = 'org_admins'
 
 class UserInfo(models.Model):
     id = models.UUIDField(primary_key=True)
     org = models.ForeignKey(Organizations, models.DO_NOTHING)
     role_priv = models.CharField(max_length=20,default="employee")
     dept = models.ForeignKey(Departments, models.DO_NOTHING)
+    is_approved = models.BooleanField(default=False)
     is_authenticated = models.BooleanField(default=False)
+    # temp=models.CharField(max_length=10)
 
     class Meta:
         managed = False

@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework import status 
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import generics
-from rest_framework.decorators import action
+from rest_framework.decorators import action,permission_classes
 from .custom_perm_classes import *
 from backend.supabase_auth import SupabaseAuthBackend
 from logic.models import *
@@ -17,34 +17,43 @@ from logic.serializers import *
 from rest_framework.request import Request
 
 
-class OrgView(generics.ListCreateAPIView,ViewSet):
-    authentication_classes = [SupabaseAuthBackend]
-    serializer_class = OrganizationSerializer
 
-    @action(detail=False, methods=['GET'], permission_classes=[AllowAny])
+# Organization ViewSet
+class OrgView(mixins.ListModelMixin,mixins.CreateModelMixin,GenericViewSet):
+    authentication_classes = [SupabaseAuthBackend]
+    # permission_classes=[SuperadminRequired]
+    serializer_class = OrganizationSerializer
+    
+    # @action(detail=False, methods=['GET'],permission_classes=[SuperadminRequired])
+    # @permission_classes([SuperadminRequired])
     def list_orgs(self, request, *args, **kwargs):
+        print("perm",self.permission_classes)
         self.queryset = Organizations.objects.all()
         return self.list(request, *args, **kwargs)
 
-    @action(detail=False, methods=['POST'], permission_classes=[SuperadminRequired])
+    # @action(detail=False, methods=['POST'], permission_classes=SuperadminRequired)
     def create_orgs(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
-
-# class OrgAdminView(mixins.ListModelMixin,GenericViewSet):
-#     # THis view will be used to create Org Admin accounts
-#     permission_classes=[SuperadminRequired]
-#     authentication_classes=[SupabaseAuthBackend]
+    
+    def get_permissions(self):
+        if self.action == "list_orgs":
+            self.permission_classes=[AllowAny]
+        elif self.action == "create_orgs":
+            self.permission_classes = [SuperadminRequired]
+        return super().get_permissions()
+    
 
 
     
-class DeptView(generics.ListCreateAPIView,ViewSet):
+# Department ViewSet
+class DeptView(mixins.ListModelMixin,mixins.CreateModelMixin,GenericViewSet):
     queryset = Departments.objects.all()    
     # permission_classes=[OrgadminRequired]
     authentication_classes=[SupabaseAuthBackend]
     serializer_class = DepartmentSerializer
 
 
-    @action(detail=True,methods=['GET'])
+    # @action(detail=True,methods=['GET'],permission_classes=[IsAuthenticated])
     def list_depts(self,request,*args,**kwargs):
         org_id = request.user.org_id
         self.queryset = Departments.objects.filter(org=org_id)
@@ -59,13 +68,45 @@ class DeptView(generics.ListCreateAPIView,ViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
     
-    @action(detail=True,methods=['POST'])
+    # @action(detail=True,methods=['POST'],permission_classes=[OrgadminRequired])
     def create_depts(self, request, *args, **kwargs):
         return  self.create(request, *args, **kwargs)
+    
+    def get_permissions(self):
+        if self.action == "list_depts":
+            self.permission_classes=[IsAuthenticated]
+        elif self.action == "create_depts":
+            self.permission_classes = [OrgadminRequired]
+        return super().get_permissions()
+
+# User ViewSet
+class UserViewSet(mixins.ListModelMixin,mixins.UpdateModelMixin,GenericViewSet):
+    queryset = UserInfo.objects.all() 
+    authentication_classes = [SupabaseAuthBackend]
+    serializer_class = UserInfoSerializer
+    lookup_field = 'id'
+
+    # @action(detail=True, methods=['GET'], permission_classes=[OrgadminRequired])
+    def list_users(self, request, *args, **kwargs):
+        org_id = request.user.org_id
+        self.queryset = UserInfo.objects.filter(org=org_id)
+        return self.list(request, *args, **kwargs)
+    
+    # @action(detail=False,methods=['PUT'],permission_classes=[OrgadminRequired])
+    def elevate(self,request,*args,**kwargs):
+        pk = kwargs.get('pk')
+        return self.partial_update(request,*args,**kwargs)
+    
+    def get_permissions(self):
+        if self.action == "list_users":
+            self.permission_classes=[OrgadminRequired]
+        elif self.action == "elevate":
+            self.permission_classes = [OrgadminRequired]
+        return super().get_permissions()
 
 
-# class UserViewSet(generics.GenericAPIView,ViewSet):
 
+    
 
     
 class TestView(APIView):
