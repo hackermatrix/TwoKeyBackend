@@ -13,7 +13,7 @@ from rest_framework.decorators import action,permission_classes
 
 from authenticate.models import Users
 from authenticate.serializers import UsersSerializer
-from .custom_perm_classes import *
+from backend.custom_perm_classes import *
 from backend.supabase_auth import SupabaseAuthBackend
 from logic.models import *
 from logic.serializers import *
@@ -86,11 +86,12 @@ class DeptView(mixins.ListModelMixin,mixins.CreateModelMixin,GenericViewSet):
 
 # User ViewSet
 class UserViewSet(mixins.ListModelMixin,mixins.UpdateModelMixin,GenericViewSet):
+    # serializer_class = UsersSerializer
+    # queryset = Users.objects.all()
+    permission_classes = [OrgadminRequired]
     queryset = UserInfo.objects.all() 
     serializer_class = UserInfoSerializer
-    # queryset = Users.objects.all()
     authentication_classes = [SupabaseAuthBackend]
-    # serializer_class = UsersSerializer
     lookup_field = 'id'
 
     # @action(detail=True, methods=['GET'], permission_classes=[OrgadminRequired])
@@ -119,12 +120,6 @@ class UserViewSet(mixins.ListModelMixin,mixins.UpdateModelMixin,GenericViewSet):
         resp = self.partial_update(request,*args,**kwargs)
         return resp
     
-    def get_permissions(self):
-        if self.action == "list_users":
-            self.permission_classes=[OrgadminRequired]
-        elif self.action == "elevate":
-            self.permission_classes = [OrgadminRequired]
-        return super().get_permissions()
 
 
 # Roles Viewset
