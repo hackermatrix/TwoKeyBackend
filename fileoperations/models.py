@@ -27,7 +27,7 @@ class Objects(models.Model):
     id = models.UUIDField(primary_key=True)
     bucket = models.ForeignKey(Buckets, models.DO_NOTHING, blank=True, null=True)
     name = models.TextField(blank=True, null=True)
-    owner = models.ForeignKey(UserInfo,on_delete=models.SET_NULL,blank=True, null=True)
+    owner = models.ForeignKey(UserInfo,on_delete=models.SET_NULL,blank=True, null=True,db_column='owner')
     created_at = models.DateTimeField(blank=True, null=True)
     updated_at = models.DateTimeField(blank=True, null=True)
     last_accessed_at = models.DateTimeField(blank=True, null=True)

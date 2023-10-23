@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: ''
-  version: 0.0.0
+  title: TwoKey API
+  version: 1.0.0
 paths:
   /dept/create_depts/:
     post:
@@ -37,6 +37,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Department'
+          description: ''
+  /file/files/:
+    get:
+      operationId: file_files_list
+      tags:
+      - file
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/File'
           description: ''
   /org/create_orgs/:
     post:
@@ -216,6 +230,21 @@ components:
         name:
           type: string
           nullable: true
+    File:
+      type: object
+      properties:
+        name:
+          type: string
+          nullable: true
+        org_name:
+          type: string
+          readOnly: true
+        dept_name:
+          type: string
+          readOnly: true
+      required:
+      - dept_name
+      - org_name
     Organization:
       type: object
       properties:

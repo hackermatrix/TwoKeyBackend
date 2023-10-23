@@ -1,15 +1,26 @@
 from rest_framework.serializers import ModelSerializer
 from rest_framework import serializers
 
-from fileoperations.models import UserFiles
+from .models import Objects
 
 
 
 
 class FileSerializer(ModelSerializer):
-    org = serializers.SerializerMethodField
-    dept = serializers.SerializerMethodField
+    org_name = serializers.SerializerMethodField()
+    dept_name = serializers.SerializerMethodField()
 
+
+    def get_org_name(self,obj):
+        owner = getattr(obj, 'owner', None)
+        if(owner):
+            return owner.org.name
+    def get_dept_name(self,obj):
+        owner = getattr(obj, 'owner', None)
+        if(owner):
+            return owner.dept.name
+        
     class Meta:
-        model = UserFiles
-        fields = ['file_name']
+        model = Objects
+        fields = ['name','org_name','dept_name']
+
