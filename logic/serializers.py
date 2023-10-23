@@ -21,10 +21,12 @@ class RoleSerializer(ModelSerializer):
         model = Role
         fields = "__all__"
 class UserInfoSerializer(ModelSerializer):
-    # role = RoleSerializer
+    dept = serializers.SerializerMethodField
     class Meta:
         model = UserInfo
         fields = ['id','email','dept','role_priv','is_approved']
 
+    def get_dept(self,obj):
+        return obj.dept.name
 
     

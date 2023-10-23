@@ -77,7 +77,7 @@ class DeptView(mixins.ListModelMixin,mixins.CreateModelMixin,GenericViewSet):
     
     def get_permissions(self):
         if self.action == "list_depts":
-            self.permission_classes=[IsAuthenticated]
+            self.permission_classes=[OrgadminRequired]
         elif self.action == "create_depts":
             self.permission_classes = [OrgadminRequired]
         return super().get_permissions()
@@ -105,7 +105,6 @@ class UserViewSet(mixins.ListModelMixin,mixins.UpdateModelMixin,GenericViewSet):
     def partial_update(self, request, *args, **kwargs):
         serializer = RoleSerializer(data=request.data['role_priv'],partial=True)
         kk = serializer.is_valid()
-        print("yoyoy",kk)
 
         role = request.data['role_priv']
         try:
