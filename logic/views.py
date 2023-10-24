@@ -97,7 +97,7 @@ class UserViewSet(mixins.ListModelMixin,mixins.UpdateModelMixin,GenericViewSet):
     # @action(detail=True, methods=['GET'], permission_classes=[OrgadminRequired])
     def list_users(self, request, *args, **kwargs):
         org_id = request.user.org_id
-        self.queryset = UserInfo.objects.filter(org=org_id)
+        self.queryset = UserInfo.objects.filter(org=org_id).exclude(role_priv='org_admin').exclude(role_priv='super_admin')
         # self.queryset = Users.objects.filter(org=org_id)
         return self.list(request, *args, **kwargs)
     
@@ -118,6 +118,11 @@ class UserViewSet(mixins.ListModelMixin,mixins.UpdateModelMixin,GenericViewSet):
         pk = kwargs.get('pk')
         resp = self.partial_update(request,*args,**kwargs)
         return resp
+    
+    def get_permissions(self):
+        if self.action == "list_users":
+            self.permission_classes=[OthersPerm]
+        return super().get_permissions()
     
 
 

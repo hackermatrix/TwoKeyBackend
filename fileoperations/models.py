@@ -43,19 +43,15 @@ class Objects(models.Model):
 
 
 # managed
-# class UserFiles(models.Model):
-#     id = models.UUIDField(primary_key=True,default=uuid4)
-#     owner = models.ForeignKey(UserInfo, on_delete=models.CASCADE)
-#     file_name = models.CharField(max_length=255)
-#     file_key = models.CharField(max_length=255)
-#     file_size = models.BigIntegerField(default=0)
-#     file_type = models.CharField(max_length=50)
-#     org = models.ForeignKey(Organizations,on_delete=models.CASCADE)
-#     dept = models.ForeignKey(Departments,on_delete=models.SET_NULL,null=True)
-#     uploaded_at = models.DateTimeField(default=timezone.now)  
+class SharedFiles(models.Model):
+    id = models.UUIDField(primary_key=True,default=uuid4)
+    file = models.OneToOneField(Objects, on_delete=models.CASCADE)
+    # file_owner = models.ForeignKey(UserInfo, on_delete=models.CASCADE)
+    shared_with = models.ManyToManyField(UserInfo, related_name='shared_files')
+    expiration_time = models.BigIntegerField(default=0)
+    last_modified_at = models.DateTimeField(default=timezone.now)
+    signed_url = models.URLField(default="")
 
-#     class Meta:
-#         db_table = 'user_files'
-
-#     def __str__(self):
-#         return (f"{self.FileID} - {self.FileName}")
+    class Meta:
+        managed = True
+        db_table = 'shared_files'

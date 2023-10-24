@@ -33,6 +33,8 @@ class SupabaseAuthBackend(BaseBackend):
 
         except jwt.exceptions.InvalidSignatureError as e:
             return Response({'error':str(e)},status.HTTP_401_UNAUTHORIZED)
+        except jwt.exceptions.ExpiredSignatureError as e:
+            return Response({'error':str(e)},status.HTTP_401_UNAUTHORIZED)
 
     def authenticate_header(self, request):
         # This method is used to include authentication information in the response.

@@ -52,6 +52,49 @@ paths:
                 items:
                   $ref: '#/components/schemas/File'
           description: ''
+  /file/share_file/:
+    post:
+      operationId: file_share_file_create
+      tags:
+      - file
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SharedFile'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SharedFile'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SharedFile'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedFile'
+          description: ''
+  /file/shared_file_info/{file}:
+    get:
+      operationId: file_shared_file_info_retrieve
+      parameters:
+      - in: path
+        name: file
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - file
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedFile'
+          description: ''
   /org/create_orgs/:
     post:
       operationId: org_create_orgs_create
@@ -265,6 +308,25 @@ components:
           maxLength: 20
       required:
       - role
+    SharedFile:
+      type: object
+      properties:
+        file:
+          type: string
+          format: uuid
+        file_name:
+          type: string
+          readOnly: true
+        shared_with:
+          type: array
+          items:
+            type: string
+            format: email
+          writeOnly: true
+      required:
+      - file
+      - file_name
+      - shared_with
     UserInfo:
       type: object
       properties:
