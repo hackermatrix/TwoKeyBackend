@@ -15,6 +15,7 @@ from .models import Objects, SharedFiles
 class FileSerializer(ModelSerializer):
     org_name = serializers.SerializerMethodField()
     dept_name = serializers.SerializerMethodField()
+    metadata =serializers.JSONField
 
 
     def get_org_name(self,obj):
@@ -29,7 +30,15 @@ class FileSerializer(ModelSerializer):
         
     class Meta:
         model = Objects
-        fields = ['id','name','org_name','dept_name']
+        fields = ['id','name','org_name','dept_name','metadata']
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['metadata'].pop('eTag')
+        data['metadata'].pop('cacheControl')
+        data['metadata'].pop('contentLength')
+        data['metadata'].pop('lastModified')
+        data['metadata'].pop('httpStatusCode')
+        return super().to_representation(instance)
 
 
 

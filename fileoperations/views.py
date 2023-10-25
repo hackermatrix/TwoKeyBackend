@@ -25,7 +25,6 @@ class FileListing(mixins.ListModelMixin
     # List all files uploaded by all users from all departments. 
     def get(self,request,*args,**kwargs):
         self.queryset = Objects.objects.prefetch_related('owner').filter(owner__org=request.user.org).exclude(name='.emptyFolderPlaceholder')
-        print(self.queryset)
         return self.list(request,*args,**kwargs)
     
 
