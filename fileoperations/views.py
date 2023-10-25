@@ -3,7 +3,7 @@ from rest_framework.viewsets import GenericViewSet
 from rest_framework.views import APIView
 from backend.custom_perm_classes import *
 from rest_framework.permissions import IsAuthenticated
-from fileoperations.serializers import FileSerializer, SharedFileSerializer
+from fileoperations.serializers import FileSerializer, SharedFileSerializer, SharedFilesRecepient
 from supabase import create_client, Client
 from decouple import config
 from rest_framework.response import Response
@@ -30,7 +30,9 @@ class FileListing(mixins.ListModelMixin
     
 
 
-class ShareViewSet(mixins.RetrieveModelMixin,
+#  Below are the endpoints used at the Sender's side.
+
+class ShareViewSetSender(mixins.RetrieveModelMixin,
                    mixins.CreateModelMixin,
                    mixins.DestroyModelMixin,
                    GenericViewSet):
@@ -40,6 +42,7 @@ class ShareViewSet(mixins.RetrieveModelMixin,
     permission_classes = [OthersPerm]
     queryset = SharedFiles.objects.all()
 
+# Checking if the user creating the share is owner of the file 
     def create(self, request, *args, **kwargs):
         current_user = request.user
         file_id = request.data.get('file')
@@ -53,6 +56,8 @@ class ShareViewSet(mixins.RetrieveModelMixin,
         else:
             return Response({'error': "You cannot share this file"}, status=status.HTTP_403_FORBIDDEN)
     
+
+# Checking if the user Deleting the share is owner of the file 
     def destroy(self, request, *args, **kwargs):
         current_user = request.user
         file_id = request.data.get('file')
@@ -68,9 +73,12 @@ class ShareViewSet(mixins.RetrieveModelMixin,
     
 
         return super().destroy(request, *args, **kwargs)
-            
+
+
     #Create a file share for list of Emails. 
     # - Only Single file sharing availabe as of now 
+    # - Assigns a presigned url to the share as in the expiration_time parameter.
+    # - Security Features not yet added.
     def share_file(self,request):
         return self.create(request)
     
@@ -86,11 +94,38 @@ class ShareViewSet(mixins.RetrieveModelMixin,
         res = self.retrieve(request)
         return res
     
+    
     # Delete All share of a file 
     def delete_share(self,request,*args,**kwargs):
         self.lookup_field = 'file'
         pk = kwargs.get('file')
         return self.destroy(request)
+    
+    
+
+# Below will be used at recepient's end
+
+class ShareViewSetReceiver(mixins.RetrieveModelMixin,
+                   mixins.CreateModelMixin,
+                   mixins.DestroyModelMixin,
+                   GenericViewSet):
+    
+    serializer_class = SharedFilesRecepient
+    authentication_classes=[SupabaseAuthBackend]
+    permission_classes = [OthersPerm]
+
+
+    # Endpoint Serves recepient with the presigned url 
+    # - Adds an access log entry.
+    def get_shared_file_url(self, request, *args, **kwargs):
+        # Only files shared with current user
+        self.queryset = SharedFiles.objects.filter(shared_with__id=request.user.id)
+        self.lookup_field = 'file'
+        res = self.retrieve(request,*args,**kwargs)
+        return res
+
+
+
         
 
 

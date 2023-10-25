@@ -3,9 +3,9 @@ from rest_framework.fields import empty
 from rest_framework.serializers import ModelSerializer
 from rest_framework import serializers
 from django.core.exceptions import ObjectDoesNotExist,ValidationError
-
-
+from .utils.supa import supabase
 from logic.models import UserInfo
+from decouple import config
 
 from .models import Objects, SharedFiles
 
@@ -40,9 +40,17 @@ class SharedFileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SharedFiles
-        fields = ["file", "file_name", 'shared_with']
+        fields = ["file", "file_name", 'shared_with','expiration_time']
 
     def create(self, validated_data):
+        # Adding the signed_url to the share:
+        file_name = validated_data['file'].name
+        expiration_time = validated_data['expiration_time']
+        res = supabase.storage.from_(config('BUCKET_NAME')).create_signed_url(file_name,expiration_time*60)
+        signed_url = res['signedURL']
+        validated_data.update({'signed_url':signed_url})
+
+
         shared_with_emails = validated_data.pop('shared_with', [])
         shared_with_ids = self.get_user_ids(shared_with_emails)
         instance = super(SharedFileSerializer, self).create(validated_data)
@@ -63,13 +71,14 @@ class SharedFileSerializer(serializers.ModelSerializer):
                 pass
         return user_ids
     
-    def save(self, **kwargs):
-        print("Instance data:",self.instance)
-        return super().save(**kwargs)
-    
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data['shared_with'] = [user.email for user in instance.shared_with.all()]
         return data
+    
+class SharedFilesRecepient(ModelSerializer):
+    class Meta:
+        model = SharedFiles
+        fields = ['id','signed_url']
     

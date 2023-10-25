@@ -67,6 +67,25 @@ paths:
                 items:
                   $ref: '#/components/schemas/File'
           description: ''
+  /file/get_presigned/{file}:
+    get:
+      operationId: file_get_presigned_retrieve
+      parameters:
+      - in: path
+        name: file
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - file
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedFilesRecepient'
+          description: ''
   /file/share_file/:
     post:
       operationId: file_share_file_create
@@ -342,10 +361,25 @@ components:
             type: string
             format: email
           writeOnly: true
+        expiration_time:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
       required:
       - file
       - file_name
       - shared_with
+    SharedFilesRecepient:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        signed_url:
+          type: string
+          format: uri
+          maxLength: 200
     UserInfo:
       type: object
       properties:
