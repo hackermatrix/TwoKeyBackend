@@ -29,77 +29,77 @@ class FileListing(mixins.ListModelMixin
     
 
 
+class FileOwnershipMixin:
+    # Check if the user creating or deleting a share is the owner of the file
+    def check_file_ownership(self, request, file_id):
+        try:
+            file_object = Objects.objects.get(id=file_id)
+            file_owner = file_object.owner
+        except Objects.DoesNotExist:
+            return Response({'error': "File not found"}, status=status.HTTP_400_BAD_REQUEST)
+        current_user = request.user
+        if current_user == file_owner:
+            return True
+        return False
+    
 #  Below are the endpoints used at the Sender's side.
-
-class ShareViewSetSender(mixins.RetrieveModelMixin,
-                   mixins.CreateModelMixin,
-                   mixins.DestroyModelMixin,
-                   GenericViewSet):
-    authentication_classes=[SupabaseAuthBackend]
+class ShareViewSetSender(FileOwnershipMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin, GenericViewSet):
+    authentication_classes = [SupabaseAuthBackend]
     serializer_class = SharedFileSerializer
-
     permission_classes = [OthersPerm]
     queryset = SharedFiles.objects.all()
 
-# Checking if the user creating the share is owner of the file 
+    # Create a file share for a list of Emails
     def create(self, request, *args, **kwargs):
-        current_user = request.user
         file_id = request.data.get('file')
-        try:
-            file_object = Objects.objects.get(id=file_id)
-            file_owner = file_object.owner
-        except Objects.DoesNotExist:
-            return Response({'error': "File not found"}, status=status.HTTP_400_BAD_REQUEST)
-        if current_user == file_owner:
+        if self.check_file_ownership(request, file_id):
             return super().create(request, *args, **kwargs)
         else:
             return Response({'error': "You cannot share this file"}, status=status.HTTP_403_FORBIDDEN)
-    
 
-# Checking if the user Deleting the share is owner of the file 
+    # Delete a file share if the user is the owner of the file
     def destroy(self, request, *args, **kwargs):
-        current_user = request.user
         file_id = request.data.get('file')
-        try:
-            file_object = Objects.objects.get(id=file_id)
-            file_owner = file_object.owner
-        except Objects.DoesNotExist:
-            return Response({'error': "File not found"}, status=status.HTTP_400_BAD_REQUEST)
-        if current_user == file_owner:
-            return super().create(request, *args, **kwargs)
+        if self.check_file_ownership(request, file_id):
+            return super().destroy(request, *args, **kwargs)
         else:
             return Response({'error': "You cannot delete this share"}, status=status.HTTP_403_FORBIDDEN)
-    
 
-        return super().destroy(request, *args, **kwargs)
-
-
-    #Create a file share for list of Emails. 
+    # Share a file (alias for create)
+    #Create a file share for list of UUIDs. 
     # - Only Single file sharing availabe as of now 
     # - Assigns a presigned url to the share as in the expiration_time parameter.
     # - Security Features not yet added.
-    def share_file(self,request):
+    def share_file(self, request):
         return self.create(request)
     
 
-    
+    # Get information about the shared file, including its name, id, and the list of users it's shared with
     # Returns Information about the Shared file given
     #  - file_name
     #  - file_id
     #  - Shared_with list
-    def get_file_info(self,request,*args,**kwargs):
+    def get_file_info(self, request, *args, **kwargs):
         self.lookup_field = 'file'
         pk = kwargs.get('file')
         res = self.retrieve(request)
         return res
-    
-    
+
     # Delete All share of a file 
-    def delete_share(self,request,*args,**kwargs):
+    # User file ownership check added already
+    def delete_share(self, request, *args, **kwargs):
         self.lookup_field = 'file'
         pk = kwargs.get('file')
         return self.destroy(request)
-    
+
+    # Remove access for a single user (not implemented yet)
+    # def remove_access(self, request):
+    #     file_id = request.data['file']
+    #     remove_user = request.data['user_id']
+    #     self.lookup_field('file')
+
+    #     if(self.check_file_ownership(request,file_id)):
+    #         self
     
 
 # Below will be used at recepient's end

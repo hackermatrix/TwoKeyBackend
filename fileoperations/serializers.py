@@ -44,7 +44,7 @@ class FileSerializer(ModelSerializer):
 
 
 class SharedFileSerializer(serializers.ModelSerializer):
-    shared_with = serializers.ListField(child=serializers.EmailField(), write_only=True)
+    shared_with = serializers.ListField(child=serializers.UUIDField(), write_only=True)
     file_name = serializers.CharField(source='file.name', read_only=True)
 
     class Meta:
@@ -60,14 +60,16 @@ class SharedFileSerializer(serializers.ModelSerializer):
         validated_data.update({'signed_url':signed_url})
 
 
-        shared_with_emails = validated_data.pop('shared_with', [])
-        shared_with_ids = self.get_user_ids(shared_with_emails)
-        instance = super(SharedFileSerializer, self).create(validated_data)
+        # shared_with_emails = validated_data.pop('shared_with', [])
+        # shared_with_ids = self.get_user_ids(shared_with_emails)
+        # instance = super(SharedFileSerializer, self).create(validated_data)
 
-        for user_id in shared_with_ids:
-            instance.shared_with.add(user_id)
+        # for user_id in shared_with_ids:
+        #     instance.shared_with.add(user_id)
 
-        return instance
+        return super().create(validated_data)
+
+        
 
     def get_user_ids(self, emails):
         user_ids = []
@@ -83,7 +85,7 @@ class SharedFileSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        data['shared_with'] = [user.email for user in instance.shared_with.all()]
+        data['shared_with'] = [{str(user.id):user.email} for user in instance.shared_with.all()]
         return data
     
 class SharedFilesRecepient(ModelSerializer):

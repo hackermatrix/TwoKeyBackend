@@ -1,10 +1,17 @@
 from django.urls import path,include
 from .views import *
+from django.urls import path
+from .views import FileListing, ShareViewSetSender, ShareViewSetReceiver
+
 urlpatterns = [
-    path('files/', FileListing.as_view(),name="Listing Org FIles "),
-    # Shared File Operations:
-    path('share_file/',ShareViewSetSender.as_view({'post':'share_file'}),name="Share a file to list of emails"),
-    path('shared_file_info/<uuid:file>',ShareViewSetSender.as_view({'get':'get_file_info'}),name="Get info about a single file"),
-    path('delete_share/<uuid:file>',ShareViewSetSender.as_view({'delete':'delete_share'}),name='Delete share'),
-    path('get_presigned/<uuid:file>',ShareViewSetReceiver.as_view({'get':'get_shared_file_url'}),name="get_shared_file_url")
+    # File Listing and Operations
+    path('files/', FileListing.as_view(), name="fileListing"),
+    
+    # Shared File Operations
+    path('shareFile/', ShareViewSetSender.as_view({'post': 'share_file'}), name="shareFile"),
+    path('sharedFileInfo/<uuid:file>/', ShareViewSetSender.as_view({'get': 'get_file_info'}), name="sharedFileInfo"),
+    path('deleteShare/<uuid:file>/', ShareViewSetSender.as_view({'delete': 'delete_share'}), name='deleteShare'),
+    
+    # Get a Presigned URL for a Shared File
+    path('getPresigned/<uuid:file>/', ShareViewSetReceiver.as_view({'get': 'get_shared_file_url'}), name="getPresignedUrl")
 ]
