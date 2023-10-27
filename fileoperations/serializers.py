@@ -49,7 +49,7 @@ class SharedFileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SharedFiles
-        fields = ["file", "file_name", 'shared_with','expiration_time']
+        fields = ["file", "file_name", 'shared_with','expiration_time','download_allowed']
 
     def create(self, validated_data):
         # Adding the signed_url to the share:
@@ -91,5 +91,5 @@ class SharedFileSerializer(serializers.ModelSerializer):
 class SharedFilesRecepient(ModelSerializer):
     class Meta:
         model = SharedFiles
-        fields = ['id','signed_url']
+        fields = ['id','signed_url','download_allowed']
     

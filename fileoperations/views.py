@@ -43,7 +43,12 @@ class FileOwnershipMixin:
         return False
     
 #  Below are the endpoints used at the Sender's side.
-class ShareViewSetSender(FileOwnershipMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin, GenericViewSet):
+class ShareViewSetSender(FileOwnershipMixin,
+                          mixins.RetrieveModelMixin, 
+                          mixins.CreateModelMixin, 
+                          mixins.DestroyModelMixin, 
+                          mixins.UpdateModelMixin,
+                          GenericViewSet):
     authentication_classes = [SupabaseAuthBackend]
     serializer_class = SharedFileSerializer
     permission_classes = [OthersPerm]
@@ -51,7 +56,7 @@ class ShareViewSetSender(FileOwnershipMixin, mixins.RetrieveModelMixin, mixins.C
 
     # Create a file share for a list of Emails
     def create(self, request, *args, **kwargs):
-        file_id = request.data.get('file')
+        file_id = kwargs.get('file')
         if self.check_file_ownership(request, file_id):
             return super().create(request, *args, **kwargs)
         else:
@@ -59,7 +64,7 @@ class ShareViewSetSender(FileOwnershipMixin, mixins.RetrieveModelMixin, mixins.C
 
     # Delete a file share if the user is the owner of the file
     def destroy(self, request, *args, **kwargs):
-        file_id = request.data.get('file')
+        file_id = kwargs.get('file')
         if self.check_file_ownership(request, file_id):
             return super().destroy(request, *args, **kwargs)
         else:
@@ -93,14 +98,13 @@ class ShareViewSetSender(FileOwnershipMixin, mixins.RetrieveModelMixin, mixins.C
         return self.destroy(request)
 
     # Remove access for a single user (not implemented yet)
-    # def remove_access(self, request):
-    #     file_id = request.data['file']
-    #     remove_user = request.data['user_id']
-    #     self.lookup_field('file')
-
-    #     if(self.check_file_ownership(request,file_id)):
-    #         self
-    
+    def edit_access(self, request,**kwargs):
+        file_id = kwargs.get('file')
+        self.lookup_field = 'file'
+        if(self.check_file_ownership(request,file_id)):
+            return self.partial_update(request,**kwargs)
+        else:
+            return Response({"error":"You cannot modify this share"},status=status.HTTP_401_UNAUTHORIZED)
 
 # Below will be used at recepient's end
 

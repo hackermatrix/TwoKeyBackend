@@ -8,6 +8,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from backend.settings import supabase_secret
 from authenticate.models import Users
+from rest_framework.renderers import JSONRenderer
 
 class SupabaseAuthBackend(BaseBackend):
     def authenticate(self, request):
@@ -32,9 +33,9 @@ class SupabaseAuthBackend(BaseBackend):
             return (user, None)
 
         except jwt.exceptions.InvalidSignatureError as e:
-            return Response({'error':str(e)},status.HTTP_401_UNAUTHORIZED)
+            return None
         except jwt.exceptions.ExpiredSignatureError as e:
-            return Response({'error':str(e)},status.HTTP_401_UNAUTHORIZED)
+            return None
 
     def authenticate_header(self, request):
         # This method is used to include authentication information in the response.
