@@ -117,6 +117,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/SharedFilesRecepient'
           description: ''
+  /file/getScreenShotLogs/:
+    get:
+      operationId: file_getScreenShotLogs_retrieve
+      tags:
+      - file
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedFilesRecepient'
+          description: ''
+  /file/screenShotAlert/:
+    post:
+      operationId: file_screenShotAlert_create
+      tags:
+      - file
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SharedFilesRecepient'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SharedFilesRecepient'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SharedFilesRecepient'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedFilesRecepient'
+          description: ''
   /file/shareFile/:
     post:
       operationId: file_shareFile_create

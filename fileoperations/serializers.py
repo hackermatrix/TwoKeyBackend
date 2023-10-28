@@ -7,7 +7,7 @@ from .utils.supa import supabase
 from logic.models import UserInfo
 from decouple import config
 
-from .models import Objects, SharedFiles
+from .models import AccessLog, Objects, SharedFiles
 
 
 
@@ -92,4 +92,16 @@ class SharedFilesRecepient(ModelSerializer):
     class Meta:
         model = SharedFiles
         fields = ['id','signed_url','download_allowed']
+
+class AccessLogSerializer(ModelSerializer):
+    class Meta:
+        model = AccessLog
+        fields = ['user','file','event']
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['user'] = UserInfo.objects.get(id=data['user']).email
+        data['file'] = Objects.objects.get(id=data['file']).name
+        print(data['user'])
+        print(data['file'])
+        return data
     

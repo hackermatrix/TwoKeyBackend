@@ -56,3 +56,12 @@ class SharedFiles(models.Model):
     class Meta:
         managed = True
         db_table = 'shared_files'
+
+class AccessLog(models.Model):
+    id = models.UUIDField(primary_key=True,default=uuid4)
+    user = models.UUIDField()
+    file = models.UUIDField()
+    event = models.CharField(default="")
+    
+    class Meta:
+        db_table = 'access_log'

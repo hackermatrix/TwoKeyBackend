@@ -3,7 +3,7 @@ from rest_framework.viewsets import GenericViewSet
 from rest_framework.views import APIView
 from backend.custom_perm_classes import *
 from rest_framework.permissions import IsAuthenticated
-from fileoperations.serializers import FileSerializer, SharedFileSerializer, SharedFilesRecepient
+from fileoperations.serializers import AccessLogSerializer, FileSerializer, SharedFileSerializer, SharedFilesRecepient
 from supabase import create_client, Client
 from decouple import config
 from rest_framework.response import Response
@@ -111,6 +111,7 @@ class ShareViewSetSender(FileOwnershipMixin,
 class ShareViewSetReceiver(mixins.RetrieveModelMixin,
                    mixins.CreateModelMixin,
                    mixins.DestroyModelMixin,
+                   mixins.ListModelMixin,
                    GenericViewSet):
     
     serializer_class = SharedFilesRecepient
@@ -126,7 +127,30 @@ class ShareViewSetReceiver(mixins.RetrieveModelMixin,
         self.lookup_field = 'file'
         res = self.retrieve(request,*args,**kwargs)
         return res
+    
+     
+    def screen_shot_alert(self,request,*args,**kwargs):
+        user_id = request.user.id
+        file_id = request.data.get('file_id')
 
+        if not Objects.objects.filter(id=file_id).exists():
+            return Response({'error': 'Invalid file_id'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Setting event type to "screenshot"
+        event_type = "screenshot"
+
+        # Create a new AccessLog entry with the event type "screenshot"
+        AccessLog.objects.create(user=user_id, file=file_id, event=event_type)
+        return Response({'message': 'Screenshot event logged successfully'}, status=status.HTTP_201_CREATED)
+    
+    # Fetch the screen shot attempts for Current user's files
+    def get_screenshot_logs(self, request,*args,**kwargs):
+        self.serializer_class = AccessLogSerializer
+        user = request.user
+        file_ids_owned_by_user = Objects.objects.filter(owner=user).values('id')
+        print(file_ids_owned_by_user)
+        self.queryset = AccessLog.objects.filter(event='screenshot',file__in=file_ids_owned_by_user)
+        return self.list(request)
 
 
         

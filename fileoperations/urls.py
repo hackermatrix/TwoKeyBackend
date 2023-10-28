@@ -14,5 +14,9 @@ urlpatterns = [
     path('editShareUsers/<uuid:file>',ShareViewSetSender.as_view({'put':'edit_access'}),name="Edit shared user"),
     
     # Get a Presigned URL for a Shared File
-    path('getPresigned/<uuid:file>/', ShareViewSetReceiver.as_view({'get': 'get_shared_file_url'}), name="getPresignedUrl")
+    path('getPresigned/<uuid:file>/', ShareViewSetReceiver.as_view({'get': 'get_shared_file_url'}), name="getPresignedUrl"),
+
+    # Store ScreenShot Attempt
+    path('screenShotAlert/',ShareViewSetReceiver.as_view({'post':'screen_shot_alert'}),name="ScreenShot Alert"),
+    path('getScreenShotLogs/',ShareViewSetReceiver.as_view({'get':'get_screenshot_logs'}),name="Get Screen Shot logs"),
 ]
