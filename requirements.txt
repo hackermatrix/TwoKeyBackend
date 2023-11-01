@@ -3,6 +3,7 @@ attrs==23.1.0
 Django==4.2.6
 django-cors-headers==4.3.0
 django-rest-framework==0.1.0
+djangorestframework-gis==1.0
 djangorestframework==3.14.0
 drf-spectacular==0.26.5
 inflection==0.5.1
