@@ -91,7 +91,7 @@ class SharedFileSerializer(serializers.ModelSerializer):
 class SharedFilesRecepient(ModelSerializer):
     class Meta:
         model = SharedFiles
-        fields = ['id','signed_url','download_allowed']
+        fields = ['id','signed_url']
 
 class AccessLogSerializer(ModelSerializer):
     class Meta:
