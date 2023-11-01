@@ -436,8 +436,6 @@ components:
           maximum: 9223372036854775807
           minimum: -9223372036854775808
           format: int64
-        download_allowed:
-          type: boolean
       required:
       - file
       - file_name
@@ -452,8 +450,6 @@ components:
           type: string
           format: uri
           maxLength: 200
-        download_allowed:
-          type: boolean
     UserInfo:
       type: object
       properties:
