@@ -51,7 +51,6 @@ class SharedFiles(models.Model):
     expiration_time = models.BigIntegerField(default=0)
     last_modified_at = models.DateTimeField(default=timezone.now)
     signed_url = models.URLField(default="")
-    download_allowed = models.BooleanField(default=False)
 
     class Meta:
         managed = True
