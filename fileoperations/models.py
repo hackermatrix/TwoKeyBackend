@@ -3,6 +3,7 @@ from authenticate.models import Users
 from logic.models import UserInfo , Organizations, Departments
 from django.utils import timezone
 from uuid import uuid4
+import django.contrib.gis.db.models as location_model
 
 # Non Managed
 
@@ -43,24 +44,48 @@ class Objects(models.Model):
 
 
 # managed
+
 class SharedFiles(models.Model):
     id = models.UUIDField(primary_key=True,default=uuid4)
     file = models.OneToOneField(Objects, on_delete=models.CASCADE)
     # file_owner = models.ForeignKey(UserInfo, on_delete=models.CASCADE)
     shared_with = models.ManyToManyField(UserInfo, related_name='shared_files')
-    expiration_time = models.BigIntegerField(default=0)
+    expiration_time = models.BigIntegerField()
     last_modified_at = models.DateTimeField(default=timezone.now)
     signed_url = models.URLField(default="")
+    # download_allowed = models.BooleanField(default=False)
+    # security = models.OneToOneField(SecCheck,on_delete=models.CASCADE,default=SecCheck.objects.create)
 
     class Meta:
         managed = True
         db_table = 'shared_files'
+
+class AllowedLocations(models.Model):
+    id = models.UUIDField(primary_key=True,default=uuid4)
+    org = models.ForeignKey(Organizations,on_delete=models.CASCADE)
+    name = models.CharField(max_length=50)
+    location_point = location_model.PointField()
+    class Meta:
+        db_table = 'allowed_locations'
+class SecCheck(models.Model):
+    id = models.UUIDField(primary_key=True,default=uuid4)
+    shared = models.ForeignKey(SharedFiles,on_delete=models.CASCADE,null=True,related_name='security_check')
+    download_enabled = models.BooleanField(default=False)
+    geo_enabled = models.ForeignKey(AllowedLocations,on_delete=models.SET_NULL,null=True,default=None)
+    unique_identifiers = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'security_checks'
+
+
 
 class AccessLog(models.Model):
     id = models.UUIDField(primary_key=True,default=uuid4)
     user = models.UUIDField()
     file = models.UUIDField()
     event = models.CharField(default="")
+    timestamp = models.DateTimeField(default=timezone.now)
     
     class Meta:
         db_table = 'access_log'
+

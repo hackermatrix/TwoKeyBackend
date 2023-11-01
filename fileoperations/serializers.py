@@ -6,8 +6,8 @@ from django.core.exceptions import ObjectDoesNotExist,ValidationError
 from .utils.supa import supabase
 from logic.models import UserInfo
 from decouple import config
-
-from .models import AccessLog, Objects, SharedFiles
+from rest_framework_gis.serializers import GeoFeatureModelSerializer
+from .models import AccessLog, AllowedLocations, Objects, SecCheck, SharedFiles
 
 
 
@@ -41,18 +41,27 @@ class FileSerializer(ModelSerializer):
         return super().to_representation(instance)
 
 
+class SecCheckSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SecCheck
+        fields = ['download_enabled','geo_enabled','unique_identifiers']
 
 
 class SharedFileSerializer(serializers.ModelSerializer):
     shared_with = serializers.ListField(child=serializers.UUIDField(), write_only=True)
     file_name = serializers.CharField(source='file.name', read_only=True)
+    owner = serializers.SerializerMethodField()
+    last_updated = serializers.SerializerMethodField()
+    security_check = SecCheckSerializer()
 
     class Meta:
         model = SharedFiles
-        fields = ["file", "file_name", 'shared_with','expiration_time']
+        fields = ["file","owner", "file_name",'last_updated', 'shared_with','expiration_time',"security_check"]
 
     def create(self, validated_data):
         # Adding the signed_url to the share:
+        print(validated_data)
+        security_check = validated_data.pop('security_check')
         file_name = validated_data['file'].name
         expiration_time = validated_data['expiration_time']
         res = supabase.storage.from_(config('BUCKET_NAME')).create_signed_url(file_name,expiration_time*60)
@@ -60,17 +69,18 @@ class SharedFileSerializer(serializers.ModelSerializer):
         validated_data.update({'signed_url':signed_url})
 
 
-        # shared_with_emails = validated_data.pop('shared_with', [])
-        # shared_with_ids = self.get_user_ids(shared_with_emails)
-        # instance = super(SharedFileSerializer, self).create(validated_data)
-
-        # for user_id in shared_with_ids:
-        #     instance.shared_with.add(user_id)
-
-        return super().create(validated_data)
-
-        
-
+        # Creating SecCheck Object.
+        created = super().create(validated_data)
+        SecCheck(shared=created,**security_check).save()
+        # print(temp)
+        return created
+    
+    def get_last_updated(self,obj):
+        return obj.file.updated_at
+    
+    def get_owner(self,obj):
+        return obj.file.owner.email
+    
     def get_user_ids(self, emails):
         user_ids = []
         for email in emails:
@@ -81,17 +91,27 @@ class SharedFileSerializer(serializers.ModelSerializer):
                 # Handle or log the exception as needed
                 pass
         return user_ids
-    
 
     def to_representation(self, instance):
+        # print(dir(instance))
+        # print(instance.security_check)
         data = super().to_representation(instance)
+        data.pop("security_check")
+        
+        serializer = SecCheckSerializer(SecCheck.objects.get(shared=SharedFiles.objects.get(file=data['file'])))
+        data["security_check"] = serializer.data
+
         data['shared_with'] = [{str(user.id):user.email} for user in instance.shared_with.all()]
+        print(data)
         return data
     
 class SharedFilesRecepient(ModelSerializer):
     class Meta:
         model = SharedFiles
         fields = ['id','signed_url']
+
+
+
 
 class AccessLogSerializer(ModelSerializer):
     class Meta:
@@ -101,7 +121,15 @@ class AccessLogSerializer(ModelSerializer):
         data = super().to_representation(instance)
         data['user'] = UserInfo.objects.get(id=data['user']).email
         data['file'] = Objects.objects.get(id=data['file']).name
-        print(data['user'])
-        print(data['file'])
         return data
     
+
+class AllowedLocationSerializer(GeoFeatureModelSerializer):
+    class Meta:
+        model = AllowedLocations
+        geo_field = 'location_point' 
+        fields =['name','location_point']
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['id'] = instance.id
+        return data

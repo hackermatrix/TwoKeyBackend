@@ -3,7 +3,7 @@ from rest_framework.viewsets import GenericViewSet
 from rest_framework.views import APIView
 from backend.custom_perm_classes import *
 from rest_framework.permissions import IsAuthenticated
-from fileoperations.serializers import AccessLogSerializer, FileSerializer, SharedFileSerializer, SharedFilesRecepient
+from fileoperations.serializers import AccessLogSerializer, AllowedLocationSerializer, FileSerializer, SharedFileSerializer, SharedFilesRecepient
 from supabase import create_client, Client
 from decouple import config
 from rest_framework.response import Response
@@ -12,6 +12,8 @@ from backend.supabase_auth import SupabaseAuthBackend
 from rest_framework import generics
 from .models import *
 from rest_framework import status
+from django.contrib.gis.geos import Point
+from django.contrib.gis.measure import Distance
 
 
 class FileListing(mixins.ListModelMixin
@@ -29,7 +31,7 @@ class FileListing(mixins.ListModelMixin
     
 
 
-class FileOwnershipMixin:
+class ExtraChecksMixin:
     # Check if the user creating or deleting a share is the owner of the file
     def check_file_ownership(self, request, file_id):
         try:
@@ -41,9 +43,10 @@ class FileOwnershipMixin:
         if current_user == file_owner:
             return True
         return False
+    # def is_location_valid(self,)
     
 #  Below are the endpoints used at the Sender's side.
-class ShareViewSetSender(FileOwnershipMixin,
+class ShareViewSetSender(ExtraChecksMixin,
                           mixins.RetrieveModelMixin, 
                           mixins.CreateModelMixin, 
                           mixins.DestroyModelMixin, 
@@ -76,7 +79,9 @@ class ShareViewSetSender(FileOwnershipMixin,
     # - Assigns a presigned url to the share as in the expiration_time parameter.
     # - Security Features not yet added.
     def share_file(self, request):
-        return self.create(request)
+        res = self.create(request)
+        print(res)
+        return res
     
 
     # Get information about the shared file, including its name, id, and the list of users it's shared with
@@ -97,7 +102,8 @@ class ShareViewSetSender(FileOwnershipMixin,
         pk = kwargs.get('file')
         return self.destroy(request)
 
-    # Remove access for a single user (not implemented yet)
+    # Edit file access
+    # - The Access log entry is not implemented
     def edit_access(self, request,**kwargs):
         file_id = kwargs.get('file')
         self.lookup_field = 'file'
@@ -118,6 +124,23 @@ class ShareViewSetReceiver(mixins.RetrieveModelMixin,
     authentication_classes=[SupabaseAuthBackend]
     permission_classes = [OthersPerm]
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        sec_obj =SecCheck.objects.get(shared=instance)
+        if(sec_obj.geo_enabled==None):
+            return super().retrieve(request, *args, **kwargs)
+        else:
+            latitude = float(self.request.data.get('latitude', 0))
+            longitude = float(self.request.data.get('longitude', 0))
+            user_location = Point(latitude,longitude, srid=4326)
+            required_location = sec_obj.geo_enabled.location_point
+            distance_in_kms = user_location.distance(required_location)*100
+            if(distance_in_kms<=1):
+                return super().retrieve(request, *args, **kwargs)
+            else:
+                return Response({"error":"Location Not Allowed!"},status=status.HTTP_401_UNAUTHORIZED)  
+        
+
 
     # Endpoint Serves recepient with the presigned url 
     # - Adds an access log entry.
@@ -126,6 +149,12 @@ class ShareViewSetReceiver(mixins.RetrieveModelMixin,
         self.queryset = SharedFiles.objects.filter(shared_with__id=request.user.id)
         self.lookup_field = 'file'
         res = self.retrieve(request,*args,**kwargs)
+        if res.status_code==200:
+            event_type="file_access"
+            file_id = kwargs.get('file')
+            # Adding File Access Log
+            AccessLog.objects.create(user=request.user.id,file=file_id,event=event_type)
+        
         return res
     
      
@@ -133,16 +162,21 @@ class ShareViewSetReceiver(mixins.RetrieveModelMixin,
         user_id = request.user.id
         file_id = request.data.get('file_id')
 
-        if not Objects.objects.filter(id=file_id).exists():
-            return Response({'error': 'Invalid file_id'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Setting event type to "screenshot"
-        event_type = "screenshot"
+        try:
+            Objects.objects.filter(id=file_id)
+            SharedFiles.objects.get(shared_with__id=user_id,file_id=file_id)
 
-        # Create a new AccessLog entry with the event type "screenshot"
-        AccessLog.objects.create(user=user_id, file=file_id, event=event_type)
-        return Response({'message': 'Screenshot event logged successfully'}, status=status.HTTP_201_CREATED)
-    
+            # Setting event type to "screenshot"
+            event_type = "screenshot"
+
+            # Create a new AccessLog entry with the event type "screenshot"
+            AccessLog.objects.create(user=user_id, file=file_id, event=event_type)
+            return Response({'message': 'Screenshot event logged successfully'}, status=status.HTTP_201_CREATED)
+        except SharedFiles.DoesNotExist:
+            return Response({'error':"No Shares Exist!"})
+        except Objects.DoesNotExist:
+            return Response({"error":"Relevent File Does not exist"})
+        
     # Fetch the screen shot attempts for Current user's files
     def get_screenshot_logs(self, request,*args,**kwargs):
         self.serializer_class = AccessLogSerializer
@@ -151,6 +185,42 @@ class ShareViewSetReceiver(mixins.RetrieveModelMixin,
         print(file_ids_owned_by_user)
         self.queryset = AccessLog.objects.filter(event='screenshot',file__in=file_ids_owned_by_user)
         return self.list(request)
+    
+
+
+class GeoLocationView(mixins.CreateModelMixin,
+                         mixins.ListModelMixin,
+                         GenericViewSet):
+    permission_classes = [OrgadminRequired]
+    authentication_classes = [SupabaseAuthBackend]
+    serializer_class = AllowedLocationSerializer
+    queryset = AllowedLocations.objects.all()
+
+    def perform_create(self,serializer):
+        try:
+            current_user = self.request.user
+            organization = current_user.org
+            # Set the organization ID in the serializer before creating the entry.
+            serializer.save(org=organization)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return super().perform_create(serializer)
+
+    def create_location(self,request):
+        print(request.data)
+        return self.create(request)
+    
+    def get_locations(self,request):
+        user_org = request.user.org
+        self.queryset = AllowedLocations.objects.filter(org=user_org)
+        return self.list(request)
+    
+    def get_permissions(self):
+        if self.action=="get_locations":
+            self.permission_classes = [OthersPerm]
+        return super().get_permissions()
+
 
 
         

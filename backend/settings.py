@@ -23,6 +23,7 @@ ALLOWED_HOSTS = ['twokeybackend.onrender.com','localhost']
 # Application definition
 
 INSTALLED_APPS = [
+    'django.contrib.gis',
     'rest_framework',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -35,7 +36,8 @@ INSTALLED_APPS = [
     'authenticate',
     'corsheaders',
     'drf_spectacular',
-]
+    'rest_framework_gis',
+    ]
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -83,7 +85,8 @@ AUTHENTICATION_BACKENDS = [
 DATABASES = {
     'default': {
         #'ENGINE': 'django.db.backends.sqlite3',
-        'ENGINE': 'django.db.backends.postgresql',
+        # 'ENGINE': 'django.db.backends.postgresql',
+        "ENGINE":'django.contrib.gis.db.backends.postgis',
         'NAME': 'postgres',
         'USER': config("SUPA_USER"),
         'PASSWORD': config("SUPA_PASS"),

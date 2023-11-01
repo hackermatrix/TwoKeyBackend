@@ -38,6 +38,29 @@ paths:
               schema:
                 $ref: '#/components/schemas/Department'
           description: ''
+  /file/createLocation/:
+    post:
+      operationId: file_createLocation_create
+      tags:
+      - file
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllowedLocation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AllowedLocation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AllowedLocation'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllowedLocation'
+          description: ''
   /file/deleteShare/{file}/:
     delete:
       operationId: file_deleteShare_destroy
@@ -53,7 +76,7 @@ paths:
       responses:
         '204':
           description: No response body
-  /file/editShareUsers/{file}:
+  /file/editShareUsers/{file}/:
     put:
       operationId: file_editShareUsers_update
       parameters:
@@ -99,8 +122,8 @@ paths:
                   $ref: '#/components/schemas/File'
           description: ''
   /file/getPresigned/{file}/:
-    get:
-      operationId: file_getPresigned_retrieve
+    post:
+      operationId: file_getPresigned_create
       parameters:
       - in: path
         name: file
@@ -110,6 +133,17 @@ paths:
         required: true
       tags:
       - file
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SharedFilesRecepient'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SharedFilesRecepient'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SharedFilesRecepient'
       responses:
         '200':
           content:
@@ -128,6 +162,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SharedFilesRecepient'
+          description: ''
+  /file/listLocation/:
+    get:
+      operationId: file_listLocation_retrieve
+      tags:
+      - file
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllowedLocation'
           description: ''
   /file/screenShotAlert/:
     post:
@@ -364,6 +410,34 @@ paths:
           description: ''
 components:
   schemas:
+    AllowedLocation:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/GisFeatureEnum'
+        geometry:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+              - Point
+            coordinates:
+              type: array
+              items:
+                type: number
+                format: float
+              example:
+              - 12.9721
+              - 77.5933
+              minItems: 2
+              maxItems: 3
+        properties:
+          type: object
+          properties:
+            name:
+              type: string
+              maxLength: 50
     Department:
       type: object
       properties:
@@ -396,6 +470,10 @@ components:
       - dept_name
       - id
       - org_name
+    GisFeatureEnum:
+      type: string
+      enum:
+      - Feature
     Organization:
       type: object
       properties:
@@ -416,13 +494,30 @@ components:
           maxLength: 20
       required:
       - role
+    SecCheck:
+      type: object
+      properties:
+        download_enabled:
+          type: boolean
+        geo_enabled:
+          type: string
+          format: uuid
+          nullable: true
+        unique_identifiers:
+          type: boolean
     SharedFile:
       type: object
       properties:
         file:
           type: string
           format: uuid
+        owner:
+          type: string
+          readOnly: true
         file_name:
+          type: string
+          readOnly: true
+        last_updated:
           type: string
           readOnly: true
         shared_with:
@@ -436,9 +531,15 @@ components:
           maximum: 9223372036854775807
           minimum: -9223372036854775808
           format: int64
+        security_check:
+          $ref: '#/components/schemas/SecCheck'
       required:
+      - expiration_time
       - file
       - file_name
+      - last_updated
+      - owner
+      - security_check
       - shared_with
     SharedFilesRecepient:
       type: object
