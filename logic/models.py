@@ -24,6 +24,7 @@ class Departments(models.Model):
 
 class UserInfo(models.Model):
     id = models.UUIDField(primary_key=True)
+    name =models.CharField(default='')
     email = models.EmailField(default=None)
     org = models.ForeignKey(Organizations, on_delete=models.CASCADE,default=None)
     role_priv = models.CharField(max_length=20,default="employee")

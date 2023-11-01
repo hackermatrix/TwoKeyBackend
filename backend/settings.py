@@ -19,7 +19,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['twokeybackend.onrender.com','localhost']
 
-
+APPEND_SLASH = False
 # Application definition
 
 INSTALLED_APPS = [
