@@ -1,5 +1,5 @@
 from django.urls import include, path
-from .views import DeptView, OrgView, RolesViewset, TestView ,UserViewSet
+from .views import DeptView, OrgView, RolesViewset ,UserViewSet
 from rest_framework.routers import DefaultRouter
 
 router =DefaultRouter()

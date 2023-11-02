@@ -137,20 +137,22 @@ class ShareViewSetReceiver(mixins.RetrieveModelMixin,
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        sec_obj =SecCheck.objects.get(shared=instance)
+        sec_obj = SecCheck.objects.get(shared=instance)
         if(sec_obj.geo_enabled==None):
             return super().retrieve(request, *args, **kwargs)
         else:
-            latitude = float(self.request.data.get('latitude', 0))
-            longitude = float(self.request.data.get('longitude', 0))
-            user_location = Point(latitude,longitude, srid=4326)
-            required_location = sec_obj.geo_enabled.location_point
-            distance_in_kms = user_location.distance(required_location)*100
-            if(distance_in_kms<=1):
-                return super().retrieve(request, *args, **kwargs)
-            else:
-                return Response({"error":"Location Not Allowed!"},status=status.HTTP_401_UNAUTHORIZED)  
-        
+            try:
+                latitude = float(self.request.data.get('latitude', 0))
+                longitude = float(self.request.data.get('longitude', 0))
+                user_location = Point(latitude,longitude, srid=4326)
+                required_location = sec_obj.geo_enabled.location_point
+                distance_in_kms = user_location.distance(required_location)*100
+                if(distance_in_kms<=1):
+                    return super().retrieve(request, *args, **kwargs)
+                else:
+                    return Response({"error":"Location Not Allowed!"},status=status.HTTP_401_UNAUTHORIZED)  
+            except ValueError:
+                return Response({"error":"wrong parameter value"})
 
 
     # Endpoint Serves recepient with the presigned url 

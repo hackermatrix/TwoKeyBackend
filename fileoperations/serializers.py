@@ -62,7 +62,6 @@ class SharedFileSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         # Adding the signed_url to the share:
-        print(validated_data)
         security_check = validated_data.pop('security_check')
         file_name = validated_data['file'].name
         expiration_time = validated_data['expiration_time']
@@ -104,7 +103,6 @@ class SharedFileSerializer(serializers.ModelSerializer):
         data["security_check"] = serializer.data
 
         data['shared_with'] = [{str(user.id):user.email} for user in instance.shared_with.all()]
-        print(data)
         return data
     
 class SharedFilesRecepient(ModelSerializer):

@@ -295,8 +295,6 @@ paths:
             schema:
               $ref: '#/components/schemas/Role'
         required: true
-      security:
-      - {}
       responses:
         '200':
           content:
@@ -315,8 +313,6 @@ paths:
         required: true
       tags:
       - role
-      security:
-      - {}
       responses:
         '204':
           description: No response body
@@ -325,8 +321,6 @@ paths:
       operationId: role_list_roles_retrieve
       tags:
       - role
-      security:
-      - {}
       responses:
         '200':
           content:
@@ -357,8 +351,6 @@ paths:
             schema:
               $ref: '#/components/schemas/Role'
         required: true
-      security:
-      - {}
       responses:
         '200':
           content:
