@@ -14,6 +14,7 @@ from .models import *
 from rest_framework import status
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import Distance
+from django.core import exceptions
 
 
 class FileListing(mixins.ListModelMixin
@@ -39,6 +40,8 @@ class ExtraChecksMixin:
             file_owner = file_object.owner
         except Objects.DoesNotExist:
             return Response({'error': "File not found"}, status=status.HTTP_400_BAD_REQUEST)
+        except exceptions.ValidationError:
+            return Response({'error': "Invalid Field Value"}, status=status.HTTP_400_BAD_REQUEST)
         current_user = request.user
         if current_user == file_owner:
             return True
@@ -57,14 +60,6 @@ class ShareViewSetSender(ExtraChecksMixin,
     permission_classes = [OthersPerm]
     queryset = SharedFiles.objects.all()
 
-    # Create a file share for a list of Emails
-    def create(self, request, *args, **kwargs):
-        file_id = kwargs.get('file')
-        if self.check_file_ownership(request, file_id):
-            return super().create(request, *args, **kwargs)
-        else:
-            return Response({'error': "You cannot share this file"}, status=status.HTTP_403_FORBIDDEN)
-
     # Delete a file share if the user is the owner of the file
     def destroy(self, request, *args, **kwargs):
         file_id = kwargs.get('file')
@@ -75,14 +70,30 @@ class ShareViewSetSender(ExtraChecksMixin,
 
     # Share a file (alias for create)
     #Create a file share for list of UUIDs. 
-    # - Only Single file sharing availabe as of now 
+    # - Share a list of files  
     # - Assigns a presigned url to the share as in the expiration_time parameter.
     # - Security Features not yet added.
     def share_file(self, request):
-        res = self.create(request)
-        print(res)
-        return res
-    
+        file_ids = request.data.get('file',[])
+        shared_files = []
+        if(type(file_ids)!=list):
+            return Response({'error':"file should be a list"},status=status.HTTP_400_BAD_REQUEST)
+        for file_id in file_ids:
+            if self.check_file_ownership(request, file_id):
+                request.data.pop('file')
+                request.data['file'] = file_id
+                serializer = self.get_serializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_create(serializer)
+                shared_files.append(file_id)
+            else:
+                return Response({'error': "You cannot share this file"}, status=status.HTTP_403_FORBIDDEN)
+        headers = self.get_success_headers(serializer.data)
+        response_data = {
+            "message":"Shares created SuccessFully!",
+            "shared_files":shared_files
+        }
+        return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
 
     # Get information about the shared file, including its name, id, and the list of users it's shared with
     # Returns Information about the Shared file given

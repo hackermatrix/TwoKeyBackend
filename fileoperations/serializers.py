@@ -47,6 +47,8 @@ class SecCheckSerializer(serializers.ModelSerializer):
         fields = ['download_enabled','geo_enabled','unique_identifiers']
 
 
+
+
 class SharedFileSerializer(serializers.ModelSerializer):
     shared_with = serializers.ListField(child=serializers.UUIDField(), write_only=True)
     file_name = serializers.CharField(source='file.name', read_only=True)
