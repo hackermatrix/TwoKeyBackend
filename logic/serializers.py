@@ -20,13 +20,33 @@ class RoleSerializer(ModelSerializer):
     class Meta:
         model = Role
         fields = "__all__"
-class UserInfoSerializer(ModelSerializer):
-    dept = serializers.SerializerMethodField
+
+
+
+class AUserInfoSerializer(ModelSerializer):
     class Meta:
         model = UserInfo
-        fields = ['id','email','dept','role_priv','is_approved']
+        fields = ['id','dept','role_priv','is_approved']
 
-    def get_dept(self,obj):
-        return obj.dept.name
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data.pop('dept')
+        data['username'] = instance.username
+        data['email'] = instance.email
+        data['name'] = instance.name
+        data['last_name'] = instance.last_name
+        data ['dept'] = instance.dept.name
 
+        return data
+
+class NUserInfoSerializer(ModelSerializer):
+    class Meta:
+        model = UserInfo
+        exclude = ['is_approved','is_authenticated','org','role_priv','dept']
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['org'] = instance.org.name
+        data['dept'] = instance.dept.name
+        data['role_priv'] = instance.role_priv
+        return data
     

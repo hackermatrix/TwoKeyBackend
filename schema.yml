@@ -373,20 +373,32 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserInfo'
+              $ref: '#/components/schemas/AUserInfo'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/UserInfo'
+              $ref: '#/components/schemas/AUserInfo'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/UserInfo'
+              $ref: '#/components/schemas/AUserInfo'
         required: true
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserInfo'
+                $ref: '#/components/schemas/AUserInfo'
+          description: ''
+  /users/getProfileInfo/:
+    get:
+      operationId: users_getProfileInfo_retrieve
+      tags:
+      - users
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NUserInfo'
           description: ''
   /users/list_users/:
     get:
@@ -398,10 +410,50 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserInfo'
+                $ref: '#/components/schemas/AUserInfo'
+          description: ''
+  /users/updateProfile/:
+    put:
+      operationId: users_updateProfile_update
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NUserInfo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NUserInfo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NUserInfo'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NUserInfo'
           description: ''
 components:
   schemas:
+    AUserInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        dept:
+          type: string
+          format: uuid
+        role_priv:
+          type: string
+          maxLength: 20
+        is_approved:
+          type: boolean
+      required:
+      - id
     AllowedLocation:
       type: object
       properties:
@@ -466,6 +518,45 @@ components:
       type: string
       enum:
       - Feature
+    NUserInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+          nullable: true
+        name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        phone:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        country:
+          type: string
+          maxLength: 30
+        state:
+          type: string
+          maxLength: 30
+        city:
+          type: string
+          maxLength: 30
+        postal_code:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+      required:
+      - id
     Organization:
       type: object
       properties:
@@ -543,23 +634,3 @@ components:
           type: string
           format: uri
           maxLength: 200
-    UserInfo:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        email:
-          type: string
-          format: email
-          maxLength: 254
-        dept:
-          type: string
-          format: uuid
-        role_priv:
-          type: string
-          maxLength: 20
-        is_approved:
-          type: boolean
-      required:
-      - id

@@ -74,13 +74,13 @@ class DeptView(mixins.ListModelMixin, mixins.CreateModelMixin, GenericViewSet):
         return super().get_permissions()
 
 
-# User ViewSet
-class UserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSet):
+# User ViewSet for Org Admin
+class AUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSet):
     # serializer_class = UsersSerializer
     # queryset = Users.objects.all()
     permission_classes = [OrgadminRequired]
     queryset = UserInfo.objects.all()
-    serializer_class = UserInfoSerializer
+    serializer_class = AUserInfoSerializer
     authentication_classes = [SupabaseAuthBackend]
     lookup_field = "id"
 
@@ -97,22 +97,26 @@ class UserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSet
 
     # Checking the Role's Existance
     def partial_update(self, request, *args, **kwargs):
-        serializer = RoleSerializer(data=request.data["role_priv"], partial=True)
-        kk = serializer.is_valid()
+        if("role_priv" in request.data):
+            serializer = RoleSerializer(data=request.data["role_priv"], partial=True)
+            kk = serializer.is_valid()
 
-        role = request.data["role_priv"]
-        try:
-            Role.objects.get(role=role)
-        except Role.DoesNotExist:
-            return Response(
-                {"error": "this role does not exist"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        except exceptions.ValidationError:
-            return Response(
-                {"error": "invalid value"}, status=status.HTTP_400_BAD_REQUEST
-            )
-        return super().partial_update(request, *args, **kwargs)
+            role = request.data["role_priv"]
+            try:
+                Role.objects.get(role=role)
+            except Role.DoesNotExist:
+                return Response(
+                    {"error": "this role does not exist"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            except exceptions.ValidationError:
+                return Response(
+                    {"error": "invalid value"}, status=status.HTTP_400_BAD_REQUEST
+                )
+            return super().partial_update(request, *args, **kwargs)
+        else:
+            return super().partial_update(request, *args, **kwargs)
+        
 
     def elevate(self, request, *args, **kwargs):
         pk = kwargs.get("pk")
@@ -123,6 +127,44 @@ class UserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSet
         if self.action == "list_users":
             self.permission_classes = [OthersPerm]
         return super().get_permissions()
+
+
+# User Viewset for  Normal users
+class NUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin,GenericViewSet):
+    authentication_classes = [SupabaseAuthBackend]
+    permission_classes = [OthersPerm]
+    serializer_class = NUserInfoSerializer
+    lookup_field = "id"
+    
+
+    def get_current_user_info(self,request):
+        current_user = request.user
+        serializer = self.get_serializer(current_user)
+        print(serializer.data)
+        return Response(serializer.data)
+    
+    def update_profile_data(self, request, **kwargs):
+        # Retrieve the object based on the request user's ID
+        user_id = request.user.id
+        try:
+            user_info = UserInfo.objects.get(id=user_id)
+        except UserInfo.DoesNotExist:
+            return Response({"error": "Profile not found for this user"}, status=404)
+
+        # Check permissions if needed
+        self.check_object_permissions(request, user_info)
+
+        # Update the user_info object with the request data
+        serializer = self.get_serializer(user_info, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data)
+
+
+
+
+
 
 
 # Roles Viewset

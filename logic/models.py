@@ -23,15 +23,25 @@ class Departments(models.Model):
 
 
 class UserInfo(models.Model):
+    # Personal Info
     id = models.UUIDField(primary_key=True)
+    username = models.CharField(default='',null=True)
     name =models.CharField(default='')
+    last_name = models.CharField(default='')
     email = models.EmailField(default=None)
+    phone = models.BigIntegerField(default=None,null=True)
+    # Work Info
     org = models.ForeignKey(Organizations, on_delete=models.CASCADE,default=None)
     role_priv = models.CharField(max_length=20,default="employee")
     dept = models.ForeignKey(Departments, models.DO_NOTHING,default=None)
+    # Address Info
+    country = models.CharField(max_length=30,default='')
+    state = models.CharField(max_length=30,default='')
+    city = models.CharField(max_length=30,default='')
+    postal_code = models.IntegerField(default=None,null=True)
+
     is_approved = models.BooleanField(default=False)
     is_authenticated = models.BooleanField(default=False)
-    # temp=models.CharField(max_length=10)
 
     class Meta:
         managed = True
