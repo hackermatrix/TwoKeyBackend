@@ -86,13 +86,21 @@ class AUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSe
 
     def list_users(self, request, *args, **kwargs):
         org_id = request.user.org_id
-        self.queryset = (
-            UserInfo.objects.filter(org=org_id)
-            .exclude(role_priv="org_admin")
-            .exclude(role_priv="super_admin")
-            .exclude(id=request.user.id)
-        )
-        # self.queryset = Users.objects.filter(org=org_id)
+        dept = kwargs.get("dept")
+        if(dept):
+            try:
+                dept_id = Departments.objects.get(name=dept)
+                self.queryset = UserInfo.objects.filter(dept=dept_id)
+            except Departments.DoesNotExist:
+                return Response({"error":"department not found"},status=status.HTTP_404_NOT_FOUND)
+        else:
+            self.queryset = (
+                UserInfo.objects.filter(org=org_id)
+                .exclude(role_priv="org_admin")
+                .exclude(role_priv="super_admin")
+                .exclude(id=request.user.id)
+            )
+            # self.queryset = Users.objects.filter(org=org_id)
         return self.list(request, *args, **kwargs)
 
     # Checking the Role's Existance
@@ -160,12 +168,6 @@ class NUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin,GenericViewSet
         serializer.save()
 
         return Response(serializer.data)
-
-
-
-
-
-
 
 # Roles Viewset
 class RolesViewset(

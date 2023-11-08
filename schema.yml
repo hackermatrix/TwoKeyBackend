@@ -3,9 +3,9 @@ info:
   title: TwoKey API
   version: 1.0.0
 paths:
-  /dept/create_depts/:
+  /dept/createDepts/:
     post:
-      operationId: dept_create_depts_create
+      operationId: dept_createDepts_create
       tags:
       - dept
       requestBody:
@@ -26,9 +26,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Department'
           description: ''
-  /dept/list_depts/:
+  /dept/listDepts/:
     get:
-      operationId: dept_list_depts_retrieve
+      operationId: dept_listDepts_retrieve
       tags:
       - dept
       responses:
@@ -241,9 +241,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/SharedFile'
           description: ''
-  /org/create_orgs/:
+  /org/createOrgs/:
     post:
-      operationId: org_create_orgs_create
+      operationId: org_createOrgs_create
       tags:
       - org
       requestBody:
@@ -278,9 +278,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Organization'
           description: ''
-  /role/create_roles/:
+  /role/createRoles/:
     post:
-      operationId: role_create_roles_create
+      operationId: role_createRoles_create
       tags:
       - role
       requestBody:
@@ -302,9 +302,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Role'
           description: ''
-  /role/delete_roles/{id}:
+  /role/deleteRoles/{id}:
     delete:
-      operationId: role_delete_roles_destroy
+      operationId: role_deleteRoles_destroy
       parameters:
       - in: path
         name: id
@@ -316,9 +316,9 @@ paths:
       responses:
         '204':
           description: No response body
-  /role/list_roles/:
+  /role/listRoles/:
     get:
-      operationId: role_list_roles_retrieve
+      operationId: role_listRoles_retrieve
       tags:
       - role
       responses:
@@ -328,9 +328,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Role'
           description: ''
-  /role/update_roles/{id}:
+  /role/updateRoles/{id}:
     put:
-      operationId: role_update_roles_update
+      operationId: role_updateRoles_update
       parameters:
       - in: path
         name: id
@@ -400,9 +400,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/NUserInfo'
           description: ''
-  /users/list_users/:
+  /users/list_users/{dept}/:
     get:
       operationId: users_list_users_retrieve
+      parameters:
+      - in: path
+        name: dept
+        schema:
+          type: string
+          pattern: ^[\w-]*$
+        required: true
       tags:
       - users
       responses:
