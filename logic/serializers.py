@@ -42,7 +42,7 @@ class AUserInfoSerializer(ModelSerializer):
 class NUserInfoSerializer(ModelSerializer):
     class Meta:
         model = UserInfo
-        exclude = ['is_approved','is_authenticated','org','role_priv','dept']
+        exclude = ['is_approved','is_authenticated','org','role_priv']
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data['org'] = instance.org.name
