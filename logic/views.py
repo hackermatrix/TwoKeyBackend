@@ -69,7 +69,7 @@ class DeptView(mixins.ListModelMixin, mixins.CreateModelMixin, GenericViewSet):
 
     def get_permissions(self):
         if self.action == "list_depts":
-            self.permission_classes = [OthersPerm]
+            self.permission_classes = [IsAuthenticated]
         elif self.action == "create_depts":
             self.permission_classes = [OrgadminRequired]
         return super().get_permissions()
