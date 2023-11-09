@@ -26,7 +26,7 @@ class RoleSerializer(ModelSerializer):
 class AUserInfoSerializer(ModelSerializer):
     class Meta:
         model = UserInfo
-        fields = ['id','dept','role_priv','is_approved']
+        fields = ['id','dept','manager','role_priv','is_approved']
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -48,5 +48,6 @@ class NUserInfoSerializer(ModelSerializer):
         data['org'] = instance.org.name
         data['dept'] = instance.dept.name
         data['role_priv'] = instance.role_priv
+        data['manager'] = instance.manager
         return data
     

@@ -16,6 +16,7 @@ from authenticate.models import Users
 from authenticate.serializers import UsersSerializer
 from backend.custom_perm_classes import *
 from backend.supabase_auth import SupabaseAuthBackend
+from fileoperations.models import SharedFiles
 from logic.models import *
 from logic.serializers import *
 from rest_framework.request import Request
@@ -130,6 +131,31 @@ class AUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSe
         pk = kwargs.get("pk")
         resp = self.partial_update(request, *args, **kwargs)
         return resp
+    
+    def get_user_info(self,request,**kwargs):
+        # User profile Data Above
+        user_id = kwargs.get("id")
+        self.lookup_field = "id"
+        instance = self.get_object()
+        serializer = AUserInfoSerializer(instance)
+        selection = request.GET.get('files')
+        # if(selection):
+        #     if(selection=="shared"):
+        #         try:
+        #             k = SharedFiles.objects.filter(file.owner=user_id)
+        #             print(k)
+        #         except Exception as e:
+        #             return Response(str(e))
+
+
+        return Response(serializer.data)
+    
+
+        try:
+            UserInfo.objects.get(id = user_id)
+        except UserInfo.DoesNotExist:
+            return Response({"error":"user does not exist"})
+        
 
     def get_permissions(self):
         if self.action == "list_users":

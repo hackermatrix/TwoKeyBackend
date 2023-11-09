@@ -454,6 +454,10 @@ components:
         dept:
           type: string
           format: uuid
+        manager:
+          type: string
+          format: uuid
+          nullable: true
         role_priv:
           type: string
           maxLength: 20
@@ -561,6 +565,10 @@ components:
           type: integer
           maximum: 2147483647
           minimum: -2147483648
+          nullable: true
+        manager:
+          type: string
+          format: uuid
           nullable: true
       required:
       - id

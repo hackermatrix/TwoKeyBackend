@@ -34,6 +34,7 @@ class UserInfo(models.Model):
     org = models.ForeignKey(Organizations, on_delete=models.CASCADE,default=None)
     role_priv = models.CharField(max_length=20,default="employee")
     dept = models.ForeignKey(Departments, models.DO_NOTHING,default=None)
+    manager = models.ForeignKey('self', on_delete=models.SET_NULL, blank=True, null=True)
     # Address Info
     country = models.CharField(max_length=30,default='')
     state = models.CharField(max_length=30,default='')
