@@ -48,6 +48,7 @@ class NUserInfoSerializer(ModelSerializer):
         data['org'] = instance.org.name
         data['dept'] = instance.dept.name
         data['role_priv'] = instance.role_priv
-        data['manager'] = instance.manager.name
+        if(instance.manager is not None):
+            data['manager'] = instance.manager.name
         return data
     

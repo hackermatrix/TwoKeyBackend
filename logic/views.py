@@ -166,7 +166,7 @@ class AUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSe
 # User Viewset for  Normal users
 class NUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin,GenericViewSet):
     authentication_classes = [SupabaseAuthBackend]
-    permission_classes = [OthersPerm]
+    permission_classes = [IsAuthenticated]
     serializer_class = NUserInfoSerializer
     lookup_field = "id"
     
@@ -194,7 +194,6 @@ class NUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin,GenericViewSet
         serializer.save()
 
         return Response(serializer.data)
-
 # Roles Viewset
 class RolesViewset(
     mixins.ListModelMixin,
