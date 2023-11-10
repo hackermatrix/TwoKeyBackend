@@ -235,15 +235,43 @@ class ShareViewSetReceiver(
             return Response({"error": "file does not exist"},status=status.HTTP_400_BAD_REQUEST)
 
     # Fetch the screen shot attempts for Current user's files
-    def get_screenshot_logs(self, request, *args, **kwargs):
+    def get_logs(self, request, *args, **kwargs):
         self.serializer_class = AccessLogSerializer
         user = request.user
-        file_ids_owned_by_user = Objects.objects.filter(owner=user).values("id")
-        print(file_ids_owned_by_user)
-        self.queryset = AccessLog.objects.filter(
-            event="screenshot", file__in=file_ids_owned_by_user
-        )
-        return self.list(request)
+        event = kwargs.get("event")
+
+        # Selecting the type of event as File Access
+        if(event=="screen"):
+            file_ids_owned_by_user = Objects.objects.filter(owner=user).values("id")
+            self.queryset = AccessLog.objects.filter(
+                event="screenshot", file__in=file_ids_owned_by_user
+            )
+            return self.list(request)
+        
+        # Selecting the type of event as File Access
+        if(event=="access"):
+            print(user.role_priv)
+            # Access level for employee level role
+            if(user.role_priv=="employee"):
+                try:
+                    n = int(kwargs.get("recs"))
+                except ValueError:
+                    return Response({"error":"invalid parameter"},status=status.HTTP_400_BAD_REQUEST)
+                
+                file_ids_owned_by_user = Objects.objects.filter(owner=user).values("id")
+                self.queryset = AccessLog.objects.filter(
+                    event="file_access", file__in=file_ids_owned_by_user
+                ).order_by('-timestamp')
+
+                #Fetching the latest n records 
+                if(n):
+                    self.queryset = self.queryset[:n] 
+                return self.list(request)
+            
+            else:
+                return Response({"error":"invalid user role"},status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"error":"specify event type"},status=status.HTTP_404_NOT_FOUND)
 
 
 class GeoLocationView(mixins.CreateModelMixin, mixins.ListModelMixin, GenericViewSet):

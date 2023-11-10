@@ -121,6 +121,7 @@ class AccessLogSerializer(ModelSerializer):
         data = super().to_representation(instance)
         data['user'] = UserInfo.objects.get(id=data['user']).email
         data['file'] = Objects.objects.get(id=data['file']).name
+        data['timestamp'] = instance.timestamp
         return data
     
 
