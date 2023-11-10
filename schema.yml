@@ -121,6 +121,31 @@ paths:
                 items:
                   $ref: '#/components/schemas/File'
           description: ''
+  /file/getLogs/{event}/{file}/:
+    get:
+      operationId: file_getLogs_retrieve
+      parameters:
+      - in: path
+        name: event
+        schema:
+          type: string
+          pattern: ^[\w-]*$
+        required: true
+      - in: path
+        name: file
+        schema:
+          type: string
+          pattern: ^[\w-]*$
+        required: true
+      tags:
+      - file
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedFilesRecepient'
+          description: ''
   /file/getPresigned/{file}/:
     post:
       operationId: file_getPresigned_create
@@ -144,18 +169,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/SharedFilesRecepient'
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SharedFilesRecepient'
-          description: ''
-  /file/getScreenShotLogs/:
-    get:
-      operationId: file_getScreenShotLogs_retrieve
-      tags:
-      - file
       responses:
         '200':
           content:
@@ -552,6 +565,11 @@ components:
           minimum: -9223372036854775808
           format: int64
           nullable: true
+        profile_pic:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
         country:
           type: string
           maxLength: 30
@@ -566,6 +584,9 @@ components:
           maximum: 2147483647
           minimum: -2147483648
           nullable: true
+        dept:
+          type: string
+          format: uuid
         manager:
           type: string
           format: uuid
