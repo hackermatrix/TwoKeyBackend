@@ -52,13 +52,9 @@ class ExtraChecksMixin:
             file_object = Objects.objects.get(id=file_id)
             file_owner = file_object.owner
         except Objects.DoesNotExist:
-            return Response(
-                {"error": "File not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return False
         except exceptions.ValidationError:
-            return Response(
-                {"error": "Invalid Field Value"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return False
         current_user = request.user
         if current_user == file_owner:
             return True
@@ -160,6 +156,7 @@ class ShareViewSetSender(
 
 
 class ShareViewSetReceiver(
+    ExtraChecksMixin,
     mixins.RetrieveModelMixin,
     mixins.CreateModelMixin,
     mixins.DestroyModelMixin,
@@ -239,6 +236,12 @@ class ShareViewSetReceiver(
         self.serializer_class = AccessLogSerializer
         user = request.user
         event = kwargs.get("event")
+        file = kwargs.get("file")
+        try:
+            n = int(request.GET.get("recs"))
+        except ValueError:
+            return Response({"error":"invalid parameter"},status=status.HTTP_400_BAD_REQUEST)
+
 
         # Selecting the type of event as File Access
         if(event=="screen"):
@@ -248,28 +251,39 @@ class ShareViewSetReceiver(
             )
             return self.list(request)
         
+
         # Selecting the type of event as File Access
         if(event=="access"):
             print(user.role_priv)
-            # Access level for employee level role
-            if(user.role_priv=="employee"):
-                try:
-                    n = int(kwargs.get("recs"))
-                except ValueError:
-                    return Response({"error":"invalid parameter"},status=status.HTTP_400_BAD_REQUEST)
-                
-                file_ids_owned_by_user = Objects.objects.filter(owner=user).values("id")
-                self.queryset = AccessLog.objects.filter(
-                    event="file_access", file__in=file_ids_owned_by_user
-                ).order_by('-timestamp')
-
-                #Fetching the latest n records 
-                if(n):
-                    self.queryset = self.queryset[:n] 
-                return self.list(request)
-            
+            if(file):
+                # For Individual Files
+                if(user.role_priv=="employee"):
+                        print(self.check_file_ownership(request,file))
+                        if(self.check_file_ownership(request,file)):
+                            self.queryset = AccessLog.objects.filter(file=file).exclude(event='screenshot')
+                            self.lookup_field="file"
+                            if(n):
+                                self.queryset = self.queryset[:n]
+                            return self.list(request)
+                        else:
+                            return Response({"error":"permission error"},status=status.HTTP_401_UNAUTHORIZED)
             else:
-                return Response({"error":"invalid user role"},status=status.HTTP_400_BAD_REQUEST)
+                # Access level for employee level role
+                if(user.role_priv=="employee"):
+                   
+                    file_ids_owned_by_user = Objects.objects.filter(owner=user).values("id")
+                    self.queryset = AccessLog.objects.filter(
+                        file__in=file_ids_owned_by_user
+                    ).exclude("screenshot").order_by('-timestamp')
+
+                    #Fetching the latest n records 
+                    if(n):
+                        self.queryset = self.queryset[:n] 
+                    return self.list(request)
+
+                else:
+                    return Response({"error":"invalid user role"},status=status.HTTP_400_BAD_REQUEST)
+            
         else:
             return Response({"error":"specify event type"},status=status.HTTP_404_NOT_FOUND)
 

@@ -18,7 +18,7 @@ urlpatterns = [
 
     # Store ScreenShot Attempt
     path('screenShotAlert/',ShareViewSetReceiver.as_view({'post':'screen_shot_alert'}),name="ScreenShot Alert"),
-    re_path(r'getLogs/(?P<event>[\w-]*)/(?P<recs>[\w-]*)/?',ShareViewSetReceiver.as_view({'get':'get_logs'}),name="Get logs"),
+    re_path(r'getLogs/(?P<event>[\w-]*)/(?P<file>[\w-]*)/?',ShareViewSetReceiver.as_view({'get':'get_logs'}),name="Get logs"),
 
     # GeoLocation Endpoints
     path('createLocation/',GeoLocationView.as_view({'post':'create_location'}),name="Creating an allowed location"),
