@@ -20,7 +20,6 @@ class FileSerializer(ModelSerializer):
 
     def get_org_name(self,obj):
         owner = getattr(obj, 'owner', None)
-        print(owner.org_id)
         if(owner):
             return owner.org.name
     def get_dept_name(self,obj):
@@ -33,12 +32,14 @@ class FileSerializer(ModelSerializer):
         fields = ['id','name','org_name','dept_name','metadata']
     def to_representation(self, instance):
         data = super().to_representation(instance)
+        # print(instance.owner.email)
+        data['owner_email'] = instance.owner.email
         data['metadata'].pop('eTag')
         data['metadata'].pop('cacheControl')
         data['metadata'].pop('contentLength')
         data['metadata'].pop('httpStatusCode')
-        data['owner'] = instance.owner.email
-        return super().to_representation(instance)
+        
+        return data
 
 
 class SecCheckSerializer(serializers.ModelSerializer):
