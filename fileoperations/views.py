@@ -41,6 +41,7 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
             Objects.objects.prefetch_related("owner")
             .filter(owner__org=request.user.org)
             .exclude(name=".emptyFolderPlaceholder")
+            .exclude(bucket_id="avatar")
         )
         return self.list(request, *args, **kwargs)
 
