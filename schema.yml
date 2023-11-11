@@ -76,9 +76,9 @@ paths:
       responses:
         '204':
           description: No response body
-  /file/editShareUsers/{file}/:
+  /file/editShare/{file}/:
     put:
-      operationId: file_editShareUsers_update
+      operationId: file_editShare_update
       parameters:
       - in: path
         name: file

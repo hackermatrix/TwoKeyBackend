@@ -120,9 +120,10 @@ class AccessLogSerializer(ModelSerializer):
         fields = ['user','file','event']
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        data['user'] = UserInfo.objects.get(id=data['user']).email
+        data['user'] = instance.user_email
+        data['username'] = instance.username
         # data['file'] = Objects.objects.get(id=data['file']).name
-        data['file'] = 'example name'
+        data['file'] = instance.file_name
         data['timestamp'] = instance.timestamp
         return data
     

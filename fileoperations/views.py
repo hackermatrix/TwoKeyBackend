@@ -196,6 +196,7 @@ class ShareViewSetReceiver(
         # Only files shared with current user
         self.queryset = SharedFiles.objects.filter(shared_with__id=request.user.id)
         self.lookup_field = "file"
+        print(self.queryset)
         res = self.retrieve(request, *args, **kwargs)
         if res.status_code == 200:
             event_type = "file_access"
@@ -203,7 +204,12 @@ class ShareViewSetReceiver(
             file_id = kwargs.get("file")
             # Adding File Access Log
             AccessLog.objects.create(
-                user=request.user.id, file=file_id, event=event_type
+                user=request.user.id, 
+                username = request.user.username,
+                user_email = request.user.email,
+                file=file_id, 
+                file_name = Objects.objects.get(id=file_id).name,
+                event=event_type
             )
 
         return res
@@ -213,14 +219,21 @@ class ShareViewSetReceiver(
         file_id = request.data.get("file_id")
 
         try:
-            Objects.objects.get(id=file_id)
+            fileobj = Objects.objects.get(id=file_id)
             SharedFiles.objects.get(shared_with__id=user_id, file_id=file_id)
 
             # Setting event type to "screenshot"
             event_type = "screenshot"
 
             # Create a new AccessLog entry with the event type "screenshot"
-            AccessLog.objects.create(user=user_id, file=file_id, event=event_type)
+            AccessLog.objects.create(
+                user=user_id, 
+                username = request.user.username,
+                user_email = request.user.email,
+                file=file_id, 
+                file_name = fileobj.name,
+                event=event_type
+                )
             return Response(
                 {"message": "Screenshot event logged successfully"},
                 status=status.HTTP_201_CREATED,
@@ -244,7 +257,7 @@ class ShareViewSetReceiver(
             return Response({"error":"invalid parameter"},status=status.HTTP_400_BAD_REQUEST)
 
 
-        # Selecting the type of event as File Access
+        # Selecting the type of event as ScreenShot
         if(event=="screen"):
             file_ids_owned_by_user = Objects.objects.filter(owner=user).values("id")
             self.queryset = AccessLog.objects.filter(
