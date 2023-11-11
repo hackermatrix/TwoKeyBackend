@@ -37,6 +37,7 @@ class FileSerializer(ModelSerializer):
         data['metadata'].pop('cacheControl')
         data['metadata'].pop('contentLength')
         data['metadata'].pop('httpStatusCode')
+        data['owner'] = instance.owner.email
         return super().to_representation(instance)
 
 
