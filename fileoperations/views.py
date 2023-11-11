@@ -249,6 +249,8 @@ class ShareViewSetReceiver(
             self.queryset = AccessLog.objects.filter(
                 event="screenshot", file__in=file_ids_owned_by_user
             )
+            if(n):
+                self.queryset = self.queryset[:n]
             return self.list(request)
         
 

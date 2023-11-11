@@ -36,7 +36,6 @@ class FileSerializer(ModelSerializer):
         data['metadata'].pop('eTag')
         data['metadata'].pop('cacheControl')
         data['metadata'].pop('contentLength')
-        data['metadata'].pop('lastModified')
         data['metadata'].pop('httpStatusCode')
         return super().to_representation(instance)
 
