@@ -239,7 +239,7 @@ class ShareViewSetReceiver(
         event = kwargs.get("event")
         file = kwargs.get("file")
         try:
-            n = int(request.GET.get("recs"))
+            n = int(request.GET.get("recs","0"))
         except ValueError:
             return Response({"error":"invalid parameter"},status=status.HTTP_400_BAD_REQUEST)
 
@@ -250,7 +250,7 @@ class ShareViewSetReceiver(
             self.queryset = AccessLog.objects.filter(
                 event="screenshot", file__in=file_ids_owned_by_user
             )
-            if(n):
+            if(n>=1):
                 self.queryset = self.queryset[:n]
             return self.list(request)
         
@@ -262,14 +262,20 @@ class ShareViewSetReceiver(
                 # For Individual Files
                 if(user.role_priv=="employee"):
                         print(self.check_file_ownership(request,file))
-                        if(self.check_file_ownership(request,file)):
+                        try:
                             self.queryset = AccessLog.objects.filter(file=file).exclude(event='screenshot')
                             self.lookup_field="file"
-                            if(n):
+                            if(n>=1):
+                                print(file  )
                                 self.queryset = self.queryset[:n]
                             return self.list(request)
-                        else:
-                            return Response({"error":"permission error"},status=status.HTTP_401_UNAUTHORIZED)
+                        except AccessLog.DoesNotExist:
+                            return Response({"error":"does not exist"},status=status.HTTP_400_BAD_REQUEST)
+                        except exceptions.ValidationError:
+                            return Response({"error":"invalid file id"},status=status.HTTP_400_BAD_REQUEST)
+                        except ValueError:
+                            return Response({"error":"value error"},status=status.HTTP_400_BAD_REQUEST)
+                        
             else:
                 # Access level for employee level role
                 if(user.role_priv=="employee"):
@@ -280,7 +286,7 @@ class ShareViewSetReceiver(
                     ).exclude("screenshot").order_by('-timestamp')
 
                     #Fetching the latest n records 
-                    if(n):
+                    if(n>=1):
                         self.queryset = self.queryset[:n] 
                     return self.list(request)
 
