@@ -36,6 +36,7 @@ class AUserInfoSerializer(ModelSerializer):
         data['name'] = instance.name
         data['last_name'] = instance.last_name
         data ['dept'] = instance.dept.name
+        data['profile_pic'] = instance.profile_pic
 
         return data
 
