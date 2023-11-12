@@ -37,12 +37,30 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
 
     # List all files uploaded by all users from all departments.
     def get(self, request, *args, **kwargs):
-        self.queryset = (
-            Objects.objects.prefetch_related("owner")
-            .filter(owner__org=request.user.org)
-            .exclude(name=".emptyFolderPlaceholder")
-            .exclude(bucket_id="avatar")
-        )
+        dept_choice = kwargs.get("dept")
+        if(dept_choice):
+            try:
+                res = Departments.objects.get(name=dept_choice)
+            except Departments.DoesNotExist:
+                return Response({"error":"dept does not exist"},status=status.HTTP_400_BAD_REQUEST)
+            except ValueError:
+                return Response({"error":"value error"},status=status.HTTP_400_BAD_REQUEST)
+            except exceptions.ValidationError:
+                return Response({"error":"validation error"},status=status.HTTP_400_BAD_REQUEST)
+            
+            self.queryset = (
+                Objects.objects.prefetch_related("owner")
+                .filter(owner__org=request.user.org,dept=res.id)
+                .exclude(name=".emptyFolderPlaceholder")
+                .exclude(bucket_id="avatar")
+            )
+        else:
+            self.queryset = (
+                Objects.objects.prefetch_related("owner")
+                .filter(owner__org=request.user.org)
+                .exclude(name=".emptyFolderPlaceholder")
+                .exclude(bucket_id="avatar")
+            )
         return self.list(request, *args, **kwargs)
 
 

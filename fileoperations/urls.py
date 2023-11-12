@@ -5,7 +5,7 @@ from .views import FileListing, ShareViewSetSender, ShareViewSetReceiver
 
 urlpatterns = [
     # File Listing and Operations
-    re_path(r'files/?', FileListing.as_view(), name="fileListing"),
+    re_path(r'files/?(?P<dept>[\w-]*)/?', FileListing.as_view(), name="fileListing"),
     
     # Shared File Operations
     re_path(r'shareFile/?', ShareViewSetSender.as_view({'post': 'share_file'}), name="shareFile"),
