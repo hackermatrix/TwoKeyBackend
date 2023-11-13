@@ -87,6 +87,7 @@ class AccessLog(models.Model):
     file = models.UUIDField()
     file_name = models.CharField(max_length=50,default="")
     event = models.CharField(default="")
+    org = models.ForeignKey(Organizations,on_delete=models.CASCADE,default=None,null=True)
     timestamp = models.DateTimeField(default=timezone.now)
     
     class Meta:

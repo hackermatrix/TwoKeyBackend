@@ -227,7 +227,8 @@ class ShareViewSetReceiver(
                 user_email = request.user.email,
                 file=file_id, 
                 file_name = Objects.objects.get(id=file_id).name,
-                event=event_type
+                event=event_type,
+                org = request.user.org
             )
 
         return res
@@ -250,7 +251,8 @@ class ShareViewSetReceiver(
                 user_email = request.user.email,
                 file=file_id, 
                 file_name = fileobj.name,
-                event=event_type
+                event=event_type,
+                org = request.user.org
                 )
             return Response(
                 {"message": "Screenshot event logged successfully"},
@@ -279,7 +281,9 @@ class ShareViewSetReceiver(
         if(event=="screen"):
             file_ids_owned_by_user = Objects.objects.filter(owner=user).values("id")
             self.queryset = AccessLog.objects.filter(
-                event="screenshot", file__in=file_ids_owned_by_user
+                event="screenshot", 
+                file__in=file_ids_owned_by_user,
+                org=user.org
             )
             if(n>=1):
                 self.queryset = self.queryset[:n]
@@ -294,7 +298,7 @@ class ShareViewSetReceiver(
                 if(user.role_priv=="employee"):
                         print(self.check_file_ownership(request,file))
                         try:
-                            self.queryset = AccessLog.objects.filter(file=file).exclude(event='screenshot')
+                            self.queryset = AccessLog.objects.filter(file=file,org=user.org).exclude(event='screenshot')
                             self.lookup_field="file"
                             if(n>=1):
                                 print(file  )
@@ -313,7 +317,8 @@ class ShareViewSetReceiver(
                    
                     file_ids_owned_by_user = Objects.objects.filter(owner=user).values("id")
                     self.queryset = AccessLog.objects.filter(
-                        file__in=file_ids_owned_by_user
+                        file__in=file_ids_owned_by_user,
+                        org=user.org
                     ).exclude("screenshot").order_by('-timestamp')
 
                     #Fetching the latest n records 
