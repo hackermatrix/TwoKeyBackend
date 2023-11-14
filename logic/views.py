@@ -28,11 +28,13 @@ class OrgView(mixins.ListModelMixin, mixins.CreateModelMixin, GenericViewSet):
     permission_classes = [SuperadminRequired]
     serializer_class = OrganizationSerializer
 
+    # Access to all users 
     def list_orgs(self, request, *args, **kwargs):
         print("perm", self.permission_classes)
         self.queryset = Organizations.objects.all()
         return self.list(request, *args, **kwargs)
-
+    
+    # Access to Super Admins only  
     def create_orgs(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -45,15 +47,16 @@ class OrgView(mixins.ListModelMixin, mixins.CreateModelMixin, GenericViewSet):
 # Department ViewSet
 class DeptView(mixins.ListModelMixin, mixins.CreateModelMixin, GenericViewSet):
     queryset = Departments.objects.all()
-    # permission_classes=[OrgadminRequired]
     authentication_classes = [SupabaseAuthBackend]
     serializer_class = DepartmentSerializer
 
+    # Access to all Authenticated Users.
     def list_depts(self, request, *args, **kwargs):
         org_id = request.user.org_id
         self.queryset = Departments.objects.filter(org=org_id)
         return self.list(request, *args, **kwargs)
-
+    
+    
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -63,7 +66,8 @@ class DeptView(mixins.ListModelMixin, mixins.CreateModelMixin, GenericViewSet):
         return Response(
             serializer.data, status=status.HTTP_201_CREATED, headers=headers
         )
-
+    
+    # Access to Organizational Admins only.
     def create_depts(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -75,10 +79,9 @@ class DeptView(mixins.ListModelMixin, mixins.CreateModelMixin, GenericViewSet):
         return super().get_permissions()
 
 
+
 # User ViewSet for Org Admin
 class AUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSet):
-    # serializer_class = UsersSerializer
-    # queryset = Users.objects.all()
     permission_classes = [OrgadminRequired]
     queryset = UserInfo.objects.all()
     serializer_class = AUserInfoSerializer
@@ -91,7 +94,7 @@ class AUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSe
         if(dept):
             try:
                 dept_id = Departments.objects.get(name=dept)
-                self.queryset = UserInfo.objects.filter(dept=dept_id)
+                self.queryset = UserInfo.objects.filter(org=org_id,dept=dept_id)
             except Departments.DoesNotExist:
                 return Response({"error":"department not found"},status=status.HTTP_404_NOT_FOUND)
         else:
@@ -131,36 +134,17 @@ class AUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSe
         pk = kwargs.get("pk")
         resp = self.partial_update(request, *args, **kwargs)
         return resp
-    
-    def get_user_info(self,request,**kwargs):
-        # User profile Data Above
-        user_id = kwargs.get("id")
-        self.lookup_field = "id"
-        instance = self.get_object()
-        serializer = AUserInfoSerializer(instance)
-        selection = request.GET.get('files')
-        # if(selection):
-        #     if(selection=="shared"):
-        #         try:
-        #             k = SharedFiles.objects.filter(file.owner=user_id)
-        #             print(k)
-        #         except Exception as e:
-        #             return Response(str(e))
 
-
-        return Response(serializer.data)
-    
-
-        try:
-            UserInfo.objects.get(id = user_id)
-        except UserInfo.DoesNotExist:
-            return Response({"error":"user does not exist"})
         
+            
 
     def get_permissions(self):
         if self.action == "list_users":
             self.permission_classes = [OthersPerm]
         return super().get_permissions()
+
+
+
 
 
 # User Viewset for  Normal users
@@ -194,6 +178,7 @@ class NUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin,GenericViewSet
         serializer.save()
 
         return Response(serializer.data)
+    
 # Roles Viewset
 class RolesViewset(
     mixins.ListModelMixin,

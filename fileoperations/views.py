@@ -41,16 +41,13 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
         if(dept_choice):
             try:
                 res = Departments.objects.get(name=dept_choice)
-            except Departments.DoesNotExist:
-                return Response({"error":"dept does not exist"},status=status.HTTP_400_BAD_REQUEST)
-            except ValueError:
-                return Response({"error":"value error"},status=status.HTTP_400_BAD_REQUEST)
-            except exceptions.ValidationError:
-                return Response({"error":"validation error"},status=status.HTTP_400_BAD_REQUEST)
-            
+
+            except (Departments.DoesNotExist,ValueError,exceptions.ValidationError):
+                return Response({"error":"invalid request"},status=status.HTTP_400_BAD_REQUEST)
+
             self.queryset = (
                 Objects.objects.prefetch_related("owner")
-                .filter(owner__org=request.user.org,dept=res.id)
+                .filter(owner__org=request.user.org,owner__dept=res.id)
                 .exclude(name=".emptyFolderPlaceholder")
                 .exclude(bucket_id="avatar")
             )
@@ -264,6 +261,8 @@ class ShareViewSetReceiver(
             return Response({"error": "invalid share"},status=status.HTTP_400_BAD_REQUEST)
         except Objects.DoesNotExist:
             return Response({"error": "file does not exist"},status=status.HTTP_400_BAD_REQUEST)
+        
+
 
     # Fetch the screen shot attempts for Current user's files
     def get_logs(self, request, *args, **kwargs):
@@ -304,13 +303,9 @@ class ShareViewSetReceiver(
                                 print(file  )
                                 self.queryset = self.queryset[:n]
                             return self.list(request)
-                        except AccessLog.DoesNotExist:
-                            return Response({"error":"does not exist"},status=status.HTTP_400_BAD_REQUEST)
-                        except exceptions.ValidationError:
-                            return Response({"error":"invalid file id"},status=status.HTTP_400_BAD_REQUEST)
-                        except ValueError:
-                            return Response({"error":"value error"},status=status.HTTP_400_BAD_REQUEST)
                         
+                        except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
+                            return Response({"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 # Access level for employee level role
                 if(user.role_priv=="employee"):
