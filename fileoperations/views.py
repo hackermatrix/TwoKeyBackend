@@ -50,6 +50,7 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
                 .filter(owner__org=request.user.org,owner__dept=res.id)
                 .exclude(name=".emptyFolderPlaceholder")
                 .exclude(bucket_id="avatar")
+                .order_by("-timestamp")
             )
         else:
             self.queryset = (
@@ -57,6 +58,7 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
                 .filter(owner__org=request.user.org)
                 .exclude(name=".emptyFolderPlaceholder")
                 .exclude(bucket_id="avatar")
+                .order_by("-timestamp")
             )
         return self.list(request, *args, **kwargs)
 
