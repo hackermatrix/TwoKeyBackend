@@ -110,8 +110,8 @@ class AUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSe
     # Checking the Role's Existance
     def partial_update(self, request, *args, **kwargs):
         if("role_priv" in request.data):
-            serializer = RoleSerializer(data=request.data["role_priv"], partial=True)
-            kk = serializer.is_valid()
+            # serializer = RoleSerializer(data=request.data["role_priv"], partial=True)
+            # kk = serializer.is_valid()
 
             role = request.data["role_priv"]
             try:
@@ -129,14 +129,11 @@ class AUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSe
         else:
             return super().partial_update(request, *args, **kwargs)
         
-
     def elevate(self, request, *args, **kwargs):
         pk = kwargs.get("pk")
         resp = self.partial_update(request, *args, **kwargs)
         return resp
 
-        
-            
 
     def get_permissions(self):
         if self.action == "list_users":

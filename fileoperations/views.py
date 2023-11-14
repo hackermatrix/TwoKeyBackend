@@ -67,16 +67,13 @@ class ExtraChecksMixin:
         try:
             file_object = Objects.objects.get(id=file_id)
             file_owner = file_object.owner
-        except Objects.DoesNotExist:
-            return False
-        except exceptions.ValidationError:
+        except Exception:
             return False
         current_user = request.user
         if current_user == file_owner:
             return True
         return False
 
-    # def is_location_valid(self,)
 
 
 #  Below are the endpoints used at the Sender's side.
@@ -195,6 +192,7 @@ class ShareViewSetReceiver(
                 user_location = Point(latitude, longitude, srid=4326)
                 required_location = sec_obj.geo_enabled.location_point
                 distance_in_kms = user_location.distance(required_location) * 100
+
                 if distance_in_kms <= 1:
                     return super().retrieve(request, *args, **kwargs)
                 else:
@@ -203,13 +201,16 @@ class ShareViewSetReceiver(
                         status=status.HTTP_401_UNAUTHORIZED,
                     )
             except ValueError:
-                return Response({"error": "wrong parameter value"})
+                return Response({"error": "wrong parameter value"},status=status.HTTP_400_BAD_REQUEST)
+            except Exception as error:
+                return Response({"error":str(error)},status=status.HTTP_400_BAD_REQUEST)
 
     # Endpoint Serves recepient with the presigned url
     # - Adds an access log entry.
     def get_shared_file_url(self, request, *args, **kwargs):
         # Only files shared with current user
         self.queryset = SharedFiles.objects.filter(shared_with__id=request.user.id)
+        print(kwargs.get('file'))
         self.lookup_field = "file"
         print(self.queryset)
         res = self.retrieve(request, *args, **kwargs)
@@ -274,58 +275,45 @@ class ShareViewSetReceiver(
             n = int(request.GET.get("recs","0"))
         except ValueError:
             return Response({"error":"invalid parameter"},status=status.HTTP_400_BAD_REQUEST)
+        except Exception as error:
+            return Response({"error":str(error)})
 
 
-        # Selecting the type of event as ScreenShot
-        if(event=="screen"):
-            file_ids_owned_by_user = Objects.objects.filter(owner=user).values("id")
-            self.queryset = AccessLog.objects.filter(
-                event="screenshot", 
-                file__in=file_ids_owned_by_user,
-                org=user.org
-            )
-            if(n>=1):
-                self.queryset = self.queryset[:n]
-            return self.list(request)
-        
+ # Selecting the type of event
+        if event == "screen":
+            return self.handle_screen_event(request, user, n)
 
-        # Selecting the type of event as File Access
-        if(event=="access"):
-            print(user.role_priv)
-            if(file):
-                # For Individual Files
-                if(user.role_priv=="employee"):
-                        print(self.check_file_ownership(request,file))
-                        try:
-                            self.queryset = AccessLog.objects.filter(file=file,org=user.org).exclude(event='screenshot')
-                            self.lookup_field="file"
-                            if(n>=1):
-                                print(file  )
-                                self.queryset = self.queryset[:n]
-                            return self.list(request)
-                        
-                        except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
-                            return Response({"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                # Access level for employee level role
-                if(user.role_priv=="employee"):
-                   
-                    file_ids_owned_by_user = Objects.objects.filter(owner=user).values("id")
-                    self.queryset = AccessLog.objects.filter(
-                        file__in=file_ids_owned_by_user,
-                        org=user.org
-                    ).exclude("screenshot").order_by('-timestamp')
-
-                    #Fetching the latest n records 
-                    if(n>=1):
-                        self.queryset = self.queryset[:n] 
-                    return self.list(request)
-
-                else:
-                    return Response({"error":"invalid user role"},status=status.HTTP_400_BAD_REQUEST)
+        elif event == "access":
+            if file:
+                return self.handle_access_event(request, user, file, n)
             
         else:
             return Response({"error":"specify event type"},status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST)
+    
+# Functions handling events
+    def handle_screen_event(self, request, user, n):
+        file_ids_owned_by_user = Objects.objects.filter(owner=user).values("id")
+        self.queryset = AccessLog.objects.filter(
+            event="screenshot",
+            file__in=file_ids_owned_by_user,
+            org=user.org
+        )
+        self.queryset[:n] if n >= 1 else self.queryset
+
+        return self.list(request)
+
+    def handle_access_event(self, request, user, file, n):
+        try:
+            self.queryset = AccessLog.objects.filter(file=file, org=user.org).exclude(event='screenshot')
+            self.lookup_field = "file"
+            self.queryset[:n] if n >= 1 else self.queryset
+            return self.list(request) 
+        except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
+            return Response({"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST)
+        
+
 
 
 class GeoLocationView(mixins.CreateModelMixin, mixins.ListModelMixin, GenericViewSet):
