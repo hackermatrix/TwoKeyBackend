@@ -9,9 +9,9 @@ urlpatterns = [
     
     # Shared File Operations
     re_path(r'shareFile/?', ShareViewSetSender.as_view({'post': 'share_file'}), name="shareFile"),
-    re_path(r'sharedFileInfo/<uuid:file>/?', ShareViewSetSender.as_view({'get': 'get_file_info'}), name="sharedFileInfo"),
-    re_path(r'deleteShare/<uuid:file>/?', ShareViewSetSender.as_view({'delete': 'delete_share'}), name='deleteShare'),
-    re_path(r'editShare/<uuid:file>/?',ShareViewSetSender.as_view({'put':'edit_access'}),name="Edit shared user"),
+    re_path(r'sharedFileInfo/(?P<file>[\w-]*)/?', ShareViewSetSender.as_view({'get': 'get_file_info'}), name="sharedFileInfo"),
+    re_path(r'deleteShare/(?P<file>[\w-]*)/?', ShareViewSetSender.as_view({'delete': 'delete_share'}), name='deleteShare'),
+    re_path(r'editShare/(?P<file>[\w-]*)/?',ShareViewSetSender.as_view({'put':'edit_access'}),name="Edit shared user"),
     
     # Get a Presigned URL for a Shared File
     re_path(r'getPresigned/(?P<file>[\w-]*)/?', ShareViewSetReceiver.as_view({'post': 'get_shared_file_url'}), name="getPresignedUrl"),
