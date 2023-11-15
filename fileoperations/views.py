@@ -287,7 +287,9 @@ class ShareViewSetReceiver(
 
         elif event == "access":
             if file:
-                return self.handle_access_event(request, user, file, n)
+                return self.handle_access_event_by_file(request, user, file, n)
+            else:
+                return self.handle_access_event_all(request, user, n)
             
         else:
             return Response({"error":"specify event type"},status=status.HTTP_404_NOT_FOUND)
@@ -302,19 +304,27 @@ class ShareViewSetReceiver(
             file__in=file_ids_owned_by_user,
             org=user.org
         )
-        self.queryset[:n] if n >= 1 else self.queryset
+        self.queryset = self.queryset[:n] if n >= 1 else self.queryset
 
         return self.list(request)
 
-    def handle_access_event(self, request, user, file, n):
+    def handle_access_event_by_file(self, request, user, file, n):
         try:
             self.queryset = AccessLog.objects.filter(file=file, org=user.org).exclude(event='screenshot')
             self.lookup_field = "file"
-            self.queryset[:n] if n >= 1 else self.queryset
+            self.queryset = self.queryset[:n] if n >= 1 else self.queryset
             return self.list(request) 
         except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
             return Response({"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST)
         
+    def handle_access_event_all(self, request, user, n):
+        try:
+            self.queryset = AccessLog.objects.filter(org=user.org).exclude(event='screenshot')
+            self.lookup_field = "file"
+            self.queryset = self.queryset[:n] if n >= 1 else self.queryset
+            return self.list(request) 
+        except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
+            return Response({"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
