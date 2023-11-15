@@ -124,6 +124,11 @@ class AccessLogSerializer(ModelSerializer):
         data['username'] = instance.username
         # data['file'] = Objects.objects.get(id=data['file']).name
         data['file'] = instance.file_name
+        try:
+            userobj = UserInfo.objects.get(id=instance.user)
+            data['profile_pic'] = userobj.profile_pic
+        except:
+            data['profile_pic'] ="placeholder"
         data['timestamp'] = instance.timestamp
         return data
     
