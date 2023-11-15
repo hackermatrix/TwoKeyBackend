@@ -103,7 +103,7 @@ class SharedFileSerializer(serializers.ModelSerializer):
         serializer = SecCheckSerializer(SecCheck.objects.get(shared=SharedFiles.objects.get(file=data['file'])))
         data["security_check"] = serializer.data
 
-        data['shared_with'] = [{str(user.id):user.email,"profile_pic":user.profile_pic} for user in instance.shared_with.all()]
+        data['shared_with'] = [{"user_id":str(user.id),"user_email":user.email,"profile_pic":user.profile_pic} for user in instance.shared_with.all()]
         return data
     
 class SharedFilesRecepient(ModelSerializer):
