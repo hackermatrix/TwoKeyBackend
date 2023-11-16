@@ -1,3 +1,4 @@
+import uuid
 from django.core import exceptions
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import Distance
@@ -210,28 +211,30 @@ class ShareViewSetReceiver(
     # Endpoint Serves recepient with the presigned url
     # - Adds an access log entry.
     def get_shared_file_url(self, request, *args, **kwargs):
-        # Only files shared with current user
+        # Only files shared with the current user
         self.queryset = SharedFiles.objects.filter(shared_with__id=request.user.id)
-        print(kwargs.get('file'))
+        user = request.user
         self.lookup_field = "file"
-        print(self.queryset)
-        res = self.retrieve(request, *args, **kwargs)
-        if res.status_code == 200:
-            event_type = "file_access"
+        response = self.retrieve(request, *args, **kwargs)
+        if response.status_code == 200:
 
             file_id = kwargs.get("file")
-            # Adding File Access Log
-            AccessLog.objects.create(
-                user=request.user.id, 
-                username = request.user.username,
-                user_email = request.user.email,
-                file=file_id, 
-                file_name = Objects.objects.get(id=file_id).name,
-                event=event_type,
-                org = request.user.org
-            )
+            access_log_data = {
+                'user': user.id,
+                'username': user.username,
+                'user_email':user.email,
+                'file': uuid.UUID(file_id),
+                'file_name' : Objects.objects.get(id=file_id).name,
+                'event': 'file_access',
+                'org': user.org.id
+            }
 
-        return res
+            access_log_serializer = AccessLogSerializer(data=access_log_data)
+            
+            if access_log_serializer.is_valid():
+                access_log_serializer.save()
+
+        return response
 
     def screen_shot_alert(self, request, *args, **kwargs):
         user_id = request.user.id

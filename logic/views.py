@@ -17,6 +17,7 @@ from authenticate.serializers import UsersSerializer
 from backend.custom_perm_classes import *
 from backend.supabase_auth import SupabaseAuthBackend
 from fileoperations.models import SharedFiles
+from fileoperations.serializers import SharedFileSerializer
 from logic.models import *
 from logic.serializers import *
 from rest_framework.request import Request
@@ -81,7 +82,10 @@ class DeptView(mixins.ListModelMixin, mixins.CreateModelMixin, GenericViewSet):
 
 
 # User ViewSet for Org Admin
-class AUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSet):
+class AUserViewSet(mixins.ListModelMixin, 
+                   mixins.UpdateModelMixin,
+                   mixins.RetrieveModelMixin, 
+                   GenericViewSet):
     permission_classes = [OrgadminRequired]
     queryset = UserInfo.objects.all()
     serializer_class = AUserInfoSerializer
@@ -133,6 +137,14 @@ class AUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSe
         pk = kwargs.get("pk")
         resp = self.partial_update(request, *args, **kwargs)
         return resp
+    
+    def get_user_info(self,request,**kwargs):
+        instance = self.get_object()
+        # serializer = SharedFileSerializer(=instance)
+        # print(serializer.data)
+        res = self.retrieve(request)
+        
+        return res
 
 
     def get_permissions(self):

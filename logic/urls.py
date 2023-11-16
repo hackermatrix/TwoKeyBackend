@@ -16,7 +16,7 @@ urlpatterns = [
 
     # User Paths For Admins
     re_path(r'^users/list_users/(?P<dept>[\w-]*)/?',AUserViewSet.as_view({'get':'list_users'}),name="list-users"),
-    # re_path(r'users/getUserInfo/(?P<id>[\w-]*)/?',AUserViewSet.as_view({'get':"get_user_info"}),name="Getuser Info"),
+    re_path(r'users/getUserInfo/(?P<id>[\w-]*)/?',AUserViewSet.as_view({'get':"get_user_info"}),name="Getuser Info"),
     path('users/elevate/<str:id>', AUserViewSet.as_view({'put': 'elevate'}), name='user-elevate'),
     # For Normal Users
     path('users/getProfileInfo/',NUserViewSet.as_view({'get':'get_current_user_info'}),name="get current user info"),

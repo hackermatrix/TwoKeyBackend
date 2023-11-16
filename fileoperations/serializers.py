@@ -117,7 +117,7 @@ class SharedFilesRecepient(ModelSerializer):
 class AccessLogSerializer(ModelSerializer):
     class Meta:
         model = AccessLog
-        fields = ['user','file','event']
+        exclude = ["timestamp","id"]
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data['user'] = instance.user_email
