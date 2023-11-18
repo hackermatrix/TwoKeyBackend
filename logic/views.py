@@ -1,4 +1,5 @@
 import json
+from django.db.models import Q
 from django.http import QueryDict
 from django.shortcuts import render
 from django.shortcuts import render
@@ -16,8 +17,8 @@ from authenticate.models import Users
 from authenticate.serializers import UsersSerializer
 from backend.custom_perm_classes import *
 from backend.supabase_auth import SupabaseAuthBackend
-from fileoperations.models import SharedFiles
-from fileoperations.serializers import SharedFileSerializer
+from fileoperations.models import Objects, SharedFiles
+from fileoperations.serializers import FileSerializer, SharedFileSerializer
 from logic.models import *
 from logic.serializers import *
 from rest_framework.request import Request
@@ -138,13 +139,38 @@ class AUserViewSet(mixins.ListModelMixin,
         resp = self.partial_update(request, *args, **kwargs)
         return resp
     
+    # Get diffent files using the type param
+    # type = owned or received or shared
     def get_user_info(self,request,**kwargs):
+        # Queried user instance
         instance = self.get_object()
-        # serializer = SharedFileSerializer(=instance)
-        # print(serializer.data)
-        res = self.retrieve(request)
-        
-        return res
+        file_type = request.GET.get("type")
+        combined_data = {}
+        if(file_type=="owned"):
+            # Fetching files owned by user
+            files_owned_by_user = Objects.objects.filter(owner=instance)
+            owned_files_data = FileSerializer(files_owned_by_user,many=True).data
+            combined_data['owned_files']=owned_files_data
+
+        elif(file_type=="received"):
+            # Fetching files shared with the user
+            files_shared_with_user = Objects.objects.filter(sharedfiles__shared_with=instance)
+            shared_files_data = FileSerializer(files_shared_with_user,many=True).data
+            combined_data["received_files"]=shared_files_data
+
+        elif(file_type=="shared"):
+            # Fetching files shared by user 
+            files_shared_by_user = Objects.objects.filter(sharedfiles__file__owner=instance.id)
+            shared_files_by_user_data =FileSerializer(files_shared_by_user,many=True).data
+            combined_data["shared_files"]=shared_files_by_user_data
+       
+        # User profile data
+        user_data = self.get_serializer(instance).data
+        combined_data["user_info"]=user_data
+
+
+      
+        return Response(combined_data,status=status.HTTP_200_OK)
 
 
     def get_permissions(self):
