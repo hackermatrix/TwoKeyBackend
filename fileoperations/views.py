@@ -3,6 +3,7 @@ from django.core import exceptions
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import Distance
 from decouple import config
+from django.shortcuts import get_object_or_404
 
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.views import APIView
@@ -24,7 +25,7 @@ from fileoperations.serializers import (
     SharedFilesRecepient,
 )
 
-from supabase import create_client, Client
+from .utils.supa import create_signed
 
 
 
@@ -212,29 +213,35 @@ class ShareViewSetReceiver(
     # - Adds an access log entry.
     def get_shared_file_url(self, request, *args, **kwargs):
         # Only files shared with the current user
-        self.queryset = SharedFiles.objects.filter(shared_with__id=request.user.id)
         user = request.user
         self.lookup_field = "file"
-        response = self.retrieve(request, *args, **kwargs)
-        if response.status_code == 200:
+        if(not self.check_file_ownership(request,kwargs.get("file"))):
+            self.queryset = SharedFiles.objects.filter(shared_with__id=request.user.id)
+            response = self.retrieve(request, *args, **kwargs)
+            if response.status_code == 200:
 
-            file_id = kwargs.get("file")
-            access_log_data = {
-                'user': user.id,
-                'username': user.username,
-                'user_email':user.email,
-                'file': uuid.UUID(file_id),
-                'file_name' : Objects.objects.get(id=file_id).name,
-                'event': 'file_access',
-                'org': user.org.id
-            }
+                file_id = kwargs.get("file")
+                access_log_data = {
+                    'user': user.id,
+                    'username': user.username,
+                    'user_email':user.email,
+                    'file': uuid.UUID(file_id),
+                    'file_name' : Objects.objects.get(id=file_id).name,
+                    'event': 'file_access',
+                    'org': user.org.id
+                }
 
-            access_log_serializer = AccessLogSerializer(data=access_log_data)
-            
-            if access_log_serializer.is_valid():
-                access_log_serializer.save()
+                access_log_serializer = AccessLogSerializer(data=access_log_data)
 
-        return response
+                if access_log_serializer.is_valid():
+                    access_log_serializer.save()
+
+            return response
+        else:
+            self.queryset = Objects.objects.filter(owner=user)
+            objs = get_object_or_404(self.queryset,id=kwargs.get('file'))
+            signed_url = create_signed(objs.name,60)
+            return Response({"id":objs.id,"signed_url":signed_url['signedURL']})
 
     def screen_shot_alert(self, request, *args, **kwargs):
         user_id = request.user.id
