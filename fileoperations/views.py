@@ -49,17 +49,15 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
 
             self.queryset = (
                 Objects.objects.prefetch_related("owner")
-                .filter(owner__org=request.user.org,owner__dept=res.id)
+                .filter(owner__org=request.user.org,owner__dept=res.id,bucket_id="TwoKey")
                 .exclude(name=".emptyFolderPlaceholder")
-                .exclude(bucket_id="avatar")
                 .order_by("-created_at")
             )
         else:
             self.queryset = (
                 Objects.objects.prefetch_related("owner")
-                .filter(owner__org=request.user.org)
+                .filter(owner__org=request.user.org,bucket_id="TwoKey")
                 .exclude(name=".emptyFolderPlaceholder")
-                .exclude(bucket_id="avatar")
                 .order_by("-created_at")
             )
         return self.list(request, *args, **kwargs)
