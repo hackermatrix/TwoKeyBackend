@@ -108,7 +108,6 @@ class AUserViewSet(
             self.queryset = (
                 UserInfo.objects.filter(org=org_id)
                 .exclude(role_priv="org_admin")
-                .exclude(role_priv="super_admin")
                 .exclude(id=request.user.id)
             )
             # self.queryset = Users.objects.filter(org=org_id)
