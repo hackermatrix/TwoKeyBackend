@@ -216,6 +216,7 @@ class ShareViewSetReceiver(
         if(not self.check_file_ownership(request,kwargs.get("file"))):
             self.queryset = SharedFiles.objects.filter(shared_with__id=request.user.id)
             response = self.retrieve(request, *args, **kwargs)
+            print(response.status_code)
             if response.status_code == 200:
 
                 file_id = kwargs.get("file")
@@ -242,26 +243,26 @@ class ShareViewSetReceiver(
             return Response({"id":objs.id,"signed_url":signed_url['signedURL']})
 
     def screen_shot_alert(self, request, *args, **kwargs):
-        user_id = request.user.id
-        file_id = request.data.get("file_id")
-
+        # Only files shared with the current user
+        user = request.user
+        file_id = kwargs.get("file")
         try:
-            fileobj = Objects.objects.get(id=file_id)
-            SharedFiles.objects.get(shared_with__id=user_id, file_id=file_id)
+            shared = SharedFiles.objects.get(shared_with__id=request.user.id,file=file_id)
+            print(shared)
 
-            # Setting event type to "screenshot"
-            event_type = "screenshot"
-
-            # Create a new AccessLog entry with the event type "screenshot"
-            AccessLog.objects.create(
-                user=user_id, 
-                username = request.user.username,
-                user_email = request.user.email,
-                file=file_id, 
-                file_name = fileobj.name,
-                event=event_type,
-                org = request.user.org
-                )
+            file_id = kwargs.get("file")
+            access_log_data = {
+                'user': user.id,
+                'username': user.username,
+                'user_email':user.email,
+                'file': uuid.UUID(file_id),
+                'file_name' : Objects.objects.get(id=file_id).name,
+                'event': 'screenshot',
+                'org': user.org.id
+            }
+            access_log_serializer = AccessLogSerializer(data=access_log_data)
+            if access_log_serializer.is_valid():
+                access_log_serializer.save()
             return Response(
                 {"message": "Screenshot event logged successfully"},
                 status=status.HTTP_201_CREATED,
@@ -272,7 +273,8 @@ class ShareViewSetReceiver(
             return Response({"error": "invalid share"},status=status.HTTP_400_BAD_REQUEST)
         except Objects.DoesNotExist:
             return Response({"error": "file does not exist"},status=status.HTTP_400_BAD_REQUEST)
-        
+        except Exception as error:
+            return Response({"error": str(error)},status=status.HTTP_400_BAD_REQUEST)
 
 
     # Fetch the screen shot attempts for Current user's files
