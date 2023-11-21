@@ -216,7 +216,6 @@ class ShareViewSetReceiver(
         if(not self.check_file_ownership(request,kwargs.get("file"))):
             self.queryset = SharedFiles.objects.filter(shared_with__id=request.user.id)
             response = self.retrieve(request, *args, **kwargs)
-            print(response.status_code)
             if response.status_code == 200:
 
                 file_id = kwargs.get("file")
@@ -313,14 +312,14 @@ class ShareViewSetReceiver(
             event="screenshot",
             file__in=file_ids_owned_by_user,
             org=user.org
-        )
+        ).order_by("-timestamp")
         self.queryset = self.queryset[:n] if n >= 1 else self.queryset
 
         return self.list(request)
 
     def handle_access_event_by_file(self, request, user, file, n):
         try:
-            self.queryset = AccessLog.objects.filter(file=file, org=user.org).exclude(event='screenshot')
+            self.queryset = AccessLog.objects.filter(file=file, org=user.org).exclude(event='screenshot').order_by("-timestamp")
             self.lookup_field = "file"
             self.queryset = self.queryset[:n] if n >= 1 else self.queryset
             return self.list(request) 
@@ -329,7 +328,7 @@ class ShareViewSetReceiver(
         
     def handle_access_event_all(self, request, user, n):
         try:
-            self.queryset = AccessLog.objects.filter(org=user.org).exclude(event='screenshot')
+            self.queryset = AccessLog.objects.filter(org=user.org).exclude(event='screenshot').order_by("-timestamp")
             self.lookup_field = "file"
             self.queryset = self.queryset[:n] if n >= 1 else self.queryset
             return self.list(request) 
