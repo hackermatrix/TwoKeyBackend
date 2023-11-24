@@ -325,6 +325,7 @@ class ShareViewSetReceiver(
         file = kwargs.get("file")
         try:
             n = int(request.GET.get("recs", "0"))
+            all_logs = int(request.GET.get("global", "1"))
         except ValueError:
             return Response(
                 {"error": "invalid parameter"}, status=status.HTTP_400_BAD_REQUEST
@@ -350,7 +351,7 @@ class ShareViewSetReceiver(
             if file:
                 return self.handle_all_by_file(request, user, file, n)
             else:
-                return self.handle_all(request, user, n)
+                return self.handle_all(request, user, n ,all_logs)
 
         return Response(
             {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
@@ -426,11 +427,16 @@ class ShareViewSetReceiver(
                 {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-    def handle_all(self, request, user, n):
+    def handle_all(self, request, user, n, all_logs):
         try:
-            self.queryset = AccessLog.objects.filter(org=user.org).order_by(
-                "-timestamp"
-            )
+            if(all_logs==0):
+                self.queryset = AccessLog.objects.filter(user=user.id).order_by(
+                    "-timestamp"
+                )                
+            else:
+                self.queryset = AccessLog.objects.filter(org=user.org).order_by(
+                    "-timestamp"
+                )
             self.lookup_field = "file"
             self.queryset = self.queryset[:n] if n >= 1 else self.queryset
             return self.list(request)
