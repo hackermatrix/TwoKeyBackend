@@ -305,8 +305,10 @@ class ShareViewSetReceiver(
                 return self.handle_access_event_all(request, user, n)
             
         else:
-            return self.handle_all_by_file(request, user, file, n)
-            # return Response({"error":"specify event type"},status=status.HTTP_404_NOT_FOUND)
+            if(file):
+                return self.handle_all_by_file(request, user, file, n)
+            else:
+                return self.handle_all(request, user, n)
 
         return Response({"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -356,6 +358,15 @@ class ShareViewSetReceiver(
         except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
             return Response({"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST)
 
+    def handle_all(self, request, user, n):
+        try:
+            self.queryset = AccessLog.objects.filter(org=user.org).order_by("-timestamp")
+            self.lookup_field = "file"
+            self.queryset = self.queryset[:n] if n >= 1 else self.queryset
+            return self.list(request) 
+        except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
+            return Response({"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST)       
+        
 class GeoLocationView(mixins.CreateModelMixin, mixins.ListModelMixin, GenericViewSet):
     permission_classes = [OrgadminRequired]
     authentication_classes = [SupabaseAuthBackend]
