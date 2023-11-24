@@ -275,31 +275,47 @@ class ShareViewSetReceiver(
             signed_url = create_signed(objs.name, 60)
             return Response({"id": objs.id, "signed_url": signed_url["signedURL"]})
 
-    def screen_shot_alert(self, request, *args, **kwargs):
+    def event_log_handler(self, request, *args, **kwargs):
         # Only files shared with the current user
         user = request.user
         file_id = kwargs.get("file")
+        allowed_events = ["screenshot","download"]
         try:
+            event = request.GET.get("event", "screenshot")
+            if(event not in allowed_events):
+                raise ValueError
+        except ValueError:
+            return Response(
+                {"error": "invalid parameter"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as error:
+            return Response({"error": str(error)})
+        
+        return self.create_log(request,user,event,*args,**kwargs)
+        
+
+    
+    def create_log(self,request,user,event,*args,**kwargs):
+        try:
+            file_id = kwargs.get("file")
             shared = SharedFiles.objects.get(
                 shared_with__id=request.user.id, file=file_id
             )
-            print(shared)
 
-            file_id = kwargs.get("file")
             access_log_data = {
                 "user": user.id,
                 "username": user.username,
                 "user_email": user.email,
                 "file": uuid.UUID(file_id),
                 "file_name": Objects.objects.get(id=file_id).name,
-                "event": "screenshot",
+                "event": event,
                 "org": user.org.id,
             }
             access_log_serializer = AccessLogSerializer(data=access_log_data)
             if access_log_serializer.is_valid():
                 access_log_serializer.save()
             return Response(
-                {"message": "Screenshot event logged successfully"},
+                {"message": f"event logged successfully"},
                 status=status.HTTP_201_CREATED,
             )
         except exceptions.ValidationError:

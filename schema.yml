@@ -128,16 +128,10 @@ paths:
                 items:
                   $ref: '#/components/schemas/File'
           description: ''
-  /file/getLogs/{event}/{file}/:
+  /file/getLogs/{file}/:
     get:
       operationId: file_getLogs_retrieve
       parameters:
-      - in: path
-        name: event
-        schema:
-          type: string
-          pattern: ^[\w-]*$
-        required: true
       - in: path
         name: file
         schema:
@@ -195,22 +189,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/AllowedLocation'
           description: ''
-  /file/screenShotAlert/:
-    post:
-      operationId: file_screenShotAlert_create
+  /file/logEvent/{file}/:
+    get:
+      operationId: file_logEvent_retrieve
+      parameters:
+      - in: path
+        name: file
+        schema:
+          type: string
+          pattern: ^[\w-]*$
+        required: true
       tags:
       - file
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SharedFilesRecepient'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SharedFilesRecepient'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SharedFilesRecepient'
       responses:
         '200':
           content:
