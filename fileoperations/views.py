@@ -28,9 +28,6 @@ from fileoperations.serializers import (
 from .utils.supa import create_signed
 
 
-
-
-
 class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
     serializer_class = FileSerializer
     authentication_classes = [SupabaseAuthBackend]
@@ -40,27 +37,61 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
     # List all files uploaded by all users from all departments.
     def get(self, request, *args, **kwargs):
         dept_choice = kwargs.get("dept")
-        if(dept_choice):
+        file_type = request.GET.get("type")
+        user = request.user
+
+        if file_type == "owned":
+            return self.get_files_owned_by_user(user)
+        elif file_type == "received":
+            return self.get_files_shared_to_user(user)
+        elif file_type == "shared":
+            return self.get_files_shared_by_user(user)
+        else:
+            return self.get_all_files(request,dept_choice)
+
+    def get_all_files(self,request,dept_choice,*args,**kwargs):
+        if dept_choice:
             try:
                 res = Departments.objects.get(name=dept_choice)
 
-            except (Departments.DoesNotExist,ValueError,exceptions.ValidationError):
-                return Response({"error":"invalid request"},status=status.HTTP_400_BAD_REQUEST)
+            except (Departments.DoesNotExist, ValueError, exceptions.ValidationError):
+                return Response(
+                    {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
+                )
 
             self.queryset = (
                 Objects.objects.prefetch_related("owner")
-                .filter(owner__org=request.user.org,owner__dept=res.id,bucket_id="TwoKey")
+                .filter(
+                    owner__org=request.user.org, owner__dept=res.id, bucket_id="TwoKey"
+                )
                 .exclude(name=".emptyFolderPlaceholder")
                 .order_by("-created_at")
             )
         else:
             self.queryset = (
                 Objects.objects.prefetch_related("owner")
-                .filter(owner__org=request.user.org,bucket_id="TwoKey")
+                .filter(owner__org=request.user.org, bucket_id="TwoKey")
                 .exclude(name=".emptyFolderPlaceholder")
                 .order_by("-created_at")
             )
         return self.list(request, *args, **kwargs)
+
+    def get_files_owned_by_user(self, user):
+        files_owned_by_user = Objects.objects.filter(owner=user)
+        owned_files_data = FileSerializer(files_owned_by_user, many=True).data
+        return Response (owned_files_data)
+
+    def get_files_shared_by_user(self, user):
+        # Fetching files shared by user
+        files_shared_by_user = Objects.objects.filter(sharedfiles__file__owner=user.id)
+        shared_files_by_user_data = FileSerializer(files_shared_by_user, many=True).data
+        return Response(shared_files_by_user_data)
+
+    def get_files_shared_to_user(self, user):
+        # Fetching files shared with the user
+        files_shared_with_user = Objects.objects.filter(sharedfiles__shared_with=user)
+        shared_files_data = FileSerializer(files_shared_with_user, many=True).data
+        return Response(shared_files_data)
 
 
 class ExtraChecksMixin:
@@ -75,7 +106,6 @@ class ExtraChecksMixin:
         if current_user == file_owner:
             return True
         return False
-
 
 
 #  Below are the endpoints used at the Sender's side.
@@ -203,9 +233,14 @@ class ShareViewSetReceiver(
                         status=status.HTTP_401_UNAUTHORIZED,
                     )
             except ValueError:
-                return Response({"error": "wrong parameter value"},status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": "wrong parameter value"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             except Exception as error:
-                return Response({"error":str(error)},status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": str(error)}, status=status.HTTP_400_BAD_REQUEST
+                )
 
     # Endpoint Serves recepient with the presigned url
     # - Adds an access log entry.
@@ -213,20 +248,19 @@ class ShareViewSetReceiver(
         # Only files shared with the current user
         user = request.user
         self.lookup_field = "file"
-        if(not self.check_file_ownership(request,kwargs.get("file"))):
+        if not self.check_file_ownership(request, kwargs.get("file")):
             self.queryset = SharedFiles.objects.filter(shared_with__id=request.user.id)
             response = self.retrieve(request, *args, **kwargs)
             if response.status_code == 200:
-
                 file_id = kwargs.get("file")
                 access_log_data = {
-                    'user': user.id,
-                    'username': user.username,
-                    'user_email':user.email,
-                    'file': uuid.UUID(file_id),
-                    'file_name' : Objects.objects.get(id=file_id).name,
-                    'event': 'file_access',
-                    'org': user.org.id
+                    "user": user.id,
+                    "username": user.username,
+                    "user_email": user.email,
+                    "file": uuid.UUID(file_id),
+                    "file_name": Objects.objects.get(id=file_id).name,
+                    "event": "file_access",
+                    "org": user.org.id,
                 }
 
                 access_log_serializer = AccessLogSerializer(data=access_log_data)
@@ -237,27 +271,29 @@ class ShareViewSetReceiver(
             return response
         else:
             self.queryset = Objects.objects.filter(owner=user)
-            objs = get_object_or_404(self.queryset,id=kwargs.get('file'))
-            signed_url = create_signed(objs.name,60)
-            return Response({"id":objs.id,"signed_url":signed_url['signedURL']})
+            objs = get_object_or_404(self.queryset, id=kwargs.get("file"))
+            signed_url = create_signed(objs.name, 60)
+            return Response({"id": objs.id, "signed_url": signed_url["signedURL"]})
 
     def screen_shot_alert(self, request, *args, **kwargs):
         # Only files shared with the current user
         user = request.user
         file_id = kwargs.get("file")
         try:
-            shared = SharedFiles.objects.get(shared_with__id=request.user.id,file=file_id)
+            shared = SharedFiles.objects.get(
+                shared_with__id=request.user.id, file=file_id
+            )
             print(shared)
 
             file_id = kwargs.get("file")
             access_log_data = {
-                'user': user.id,
-                'username': user.username,
-                'user_email':user.email,
-                'file': uuid.UUID(file_id),
-                'file_name' : Objects.objects.get(id=file_id).name,
-                'event': 'screenshot',
-                'org': user.org.id
+                "user": user.id,
+                "username": user.username,
+                "user_email": user.email,
+                "file": uuid.UUID(file_id),
+                "file_name": Objects.objects.get(id=file_id).name,
+                "event": "screenshot",
+                "org": user.org.id,
             }
             access_log_serializer = AccessLogSerializer(data=access_log_data)
             if access_log_serializer.is_valid():
@@ -267,14 +303,19 @@ class ShareViewSetReceiver(
                 status=status.HTTP_201_CREATED,
             )
         except exceptions.ValidationError:
-            return Response({"error":"wrong parameter value"},status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "wrong parameter value"}, status=status.HTTP_400_BAD_REQUEST
+            )
         except SharedFiles.DoesNotExist:
-            return Response({"error": "invalid share"},status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "invalid share"}, status=status.HTTP_400_BAD_REQUEST
+            )
         except Objects.DoesNotExist:
-            return Response({"error": "file does not exist"},status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "file does not exist"}, status=status.HTTP_400_BAD_REQUEST
+            )
         except Exception as error:
-            return Response({"error": str(error)},status=status.HTTP_400_BAD_REQUEST)
-
+            return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
     # Fetch the screen shot attempts for Current user's files
     def get_logs(self, request, *args, **kwargs):
@@ -283,14 +324,15 @@ class ShareViewSetReceiver(
         event = kwargs.get("event")
         file = kwargs.get("file")
         try:
-            n = int(request.GET.get("recs","0"))
+            n = int(request.GET.get("recs", "0"))
         except ValueError:
-            return Response({"error":"invalid parameter"},status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "invalid parameter"}, status=status.HTTP_400_BAD_REQUEST
+            )
         except Exception as error:
-            return Response({"error":str(error)})
+            return Response({"error": str(error)})
 
-
- # Selecting the type of event
+        # Selecting the type of event
         if event == "screen":
             # return self.handle_screen_event_by_file(request, user, n)
             if file:
@@ -303,70 +345,101 @@ class ShareViewSetReceiver(
                 return self.handle_access_event_by_file(request, user, file, n)
             else:
                 return self.handle_access_event_all(request, user, n)
-            
+
         else:
-            if(file):
+            if file:
                 return self.handle_all_by_file(request, user, file, n)
             else:
                 return self.handle_all(request, user, n)
 
-        return Response({"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST)
-    
-# Functions handling events
+        return Response(
+            {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Functions handling events
     def handle_screen_event_by_file(self, request, user, file, n):
         try:
-            self.queryset = AccessLog.objects.filter(file=file, org=user.org,event='screenshot').order_by("-timestamp")
+            self.queryset = AccessLog.objects.filter(
+                file=file, org=user.org, event="screenshot"
+            ).order_by("-timestamp")
             self.lookup_field = "file"
             self.queryset = self.queryset[:n] if n >= 1 else self.queryset
-            return self.list(request) 
+            return self.list(request)
         except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
-            return Response({"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST)
-        
-    def handle_screen_event_all(self,request, user, n):
+            return Response(
+                {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+    def handle_screen_event_all(self, request, user, n):
         try:
-            self.queryset = AccessLog.objects.filter(org=user.org,event='screenshot').order_by("-timestamp")
+            self.queryset = AccessLog.objects.filter(
+                org=user.org, event="screenshot"
+            ).order_by("-timestamp")
             self.lookup_field = "file"
             self.queryset = self.queryset[:n] if n >= 1 else self.queryset
-            return self.list(request) 
+            return self.list(request)
         except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
-            return Response({"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
     def handle_access_event_by_file(self, request, user, file, n):
         try:
-            self.queryset = AccessLog.objects.filter(file=file, org=user.org).exclude(event='screenshot').order_by("-timestamp")
+            self.queryset = (
+                AccessLog.objects.filter(file=file, org=user.org)
+                .exclude(event="screenshot")
+                .order_by("-timestamp")
+            )
             self.lookup_field = "file"
             self.queryset = self.queryset[:n] if n >= 1 else self.queryset
-            return self.list(request) 
+            return self.list(request)
         except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
-            return Response({"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response(
+                {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
     def handle_access_event_all(self, request, user, n):
         try:
-            self.queryset = AccessLog.objects.filter(org=user.org).exclude(event='screenshot').order_by("-timestamp")
+            self.queryset = (
+                AccessLog.objects.filter(org=user.org)
+                .exclude(event="screenshot")
+                .order_by("-timestamp")
+            )
             self.lookup_field = "file"
             self.queryset = self.queryset[:n] if n >= 1 else self.queryset
-            return self.list(request) 
+            return self.list(request)
         except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
-            return Response({"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response(
+                {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
     def handle_all_by_file(self, request, user, file, n):
         try:
-            self.queryset = AccessLog.objects.filter(file=file, org=user.org).order_by("-timestamp")
+            self.queryset = AccessLog.objects.filter(file=file, org=user.org).order_by(
+                "-timestamp"
+            )
             self.lookup_field = "file"
             self.queryset = self.queryset[:n] if n >= 1 else self.queryset
-            return self.list(request) 
+            return self.list(request)
         except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
-            return Response({"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
     def handle_all(self, request, user, n):
         try:
-            self.queryset = AccessLog.objects.filter(org=user.org).order_by("-timestamp")
+            self.queryset = AccessLog.objects.filter(org=user.org).order_by(
+                "-timestamp"
+            )
             self.lookup_field = "file"
             self.queryset = self.queryset[:n] if n >= 1 else self.queryset
-            return self.list(request) 
+            return self.list(request)
         except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
-            return Response({"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST)       
-        
+            return Response(
+                {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+
 class GeoLocationView(mixins.CreateModelMixin, mixins.ListModelMixin, GenericViewSet):
     permission_classes = [OrgadminRequired]
     authentication_classes = [SupabaseAuthBackend]
