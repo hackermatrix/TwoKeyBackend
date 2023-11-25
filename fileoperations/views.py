@@ -362,6 +362,12 @@ class ShareViewSetReceiver(
                 return self.handle_access_event_by_file(request, user, file, n)
             else:
                 return self.handle_access_event_all(request, user, n)
+            
+        elif event == "download":
+            if file:
+                return self.handle_download_event_by_file(request, user, file, n)
+            else:
+                return self.handle_download_event_all(request, user, n)           
 
         else:
             if file:
@@ -405,6 +411,7 @@ class ShareViewSetReceiver(
             self.queryset = (
                 AccessLog.objects.filter(file=file, org=user.org)
                 .exclude(event="screenshot")
+                .exclude(event="download")
                 .order_by("-timestamp")
             )
             self.lookup_field = "file"
@@ -420,6 +427,35 @@ class ShareViewSetReceiver(
             self.queryset = (
                 AccessLog.objects.filter(org=user.org)
                 .exclude(event="screenshot")
+                .exclude(event="download")
+                .order_by("-timestamp")
+            )
+            self.lookup_field = "file"
+            self.queryset = self.queryset[:n] if n >= 1 else self.queryset
+            return self.list(request)
+        except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
+            return Response(
+                {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        
+    def handle_download_event_by_file(self, request, user, file, n):
+        try:
+            self.queryset = (
+                AccessLog.objects.filter(file=file, org=user.org,event="download")
+                .order_by("-timestamp")
+            )
+            self.lookup_field = "file"
+            self.queryset = self.queryset[:n] if n >= 1 else self.queryset
+            return self.list(request)
+        except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
+            return Response(
+                {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+    def handle_download_event_all(self, request, user, n):
+        try:
+            self.queryset = (
+                AccessLog.objects.filter(org=user.org,event="download")
                 .order_by("-timestamp")
             )
             self.lookup_field = "file"
