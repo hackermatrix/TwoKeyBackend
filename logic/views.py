@@ -110,7 +110,7 @@ class AUserViewSet(
                 .exclude(id=request.user.id)
             )
             # self.queryset = Users.objects.filter(org=org_id)
-        return self.list(request, *args, **kwargs)
+        return self.list(request, context={'request':request}, **kwargs)
 
     # Checking the Role's Existance
     def partial_update(self, request, *args, **kwargs):
