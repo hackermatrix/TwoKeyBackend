@@ -367,7 +367,9 @@ class ShareViewSetReceiver(
             if file:
                 return self.handle_download_event_by_file(request, user, file, n)
             else:
-                return self.handle_download_event_all(request, user, n)           
+                return self.handle_download_event_all(request, user, n)     
+        elif event == "dues":
+            return self.handle_due_event_all(user, n)       
 
         else:
             if file:
@@ -466,6 +468,23 @@ class ShareViewSetReceiver(
                 {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
             )
 
+    def handle_due_event_all(self,user, n):
+        self.serializer_class = SharedFileSerializer
+        try:
+            self.queryset = (
+                SharedFiles.objects.prefetch_related("file").filter(file__owner__org=user.org,state="due")
+                .order_by("-last_modified_at")
+
+            )
+            self.queryset = self.queryset[:n] if n >= 1 else self.queryset
+            fields =['file_name','last_updated','expiration_time','shared_with']
+            serializer = self.get_serializer(self.queryset, many=True,context={'fields':fields})
+            return Response(serializer.data)
+        except (SharedFiles.DoesNotExist, exceptions.ValidationError, ValueError):
+            return Response(
+                {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        
     def handle_all_by_file(self, request, user, file, n):
         try:
             self.queryset = AccessLog.objects.filter(file=file, org=user.org).order_by(

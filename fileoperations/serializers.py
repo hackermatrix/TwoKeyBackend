@@ -104,6 +104,15 @@ class SharedFileSerializer(serializers.ModelSerializer):
         data["security_check"] = serializer.data
 
         data['shared_with'] = [{"user_id":str(user.id),"user_email":user.email,"profile_pic":user.profile_pic} for user in instance.shared_with.all()]
+        
+
+        fields_to_include = self.context.get('fields')
+
+        if fields_to_include:
+            data = {key: value for key, value in data.items() if key in fields_to_include}
+        
+
+
         return data
     
 class SharedFilesRecepient(ModelSerializer):

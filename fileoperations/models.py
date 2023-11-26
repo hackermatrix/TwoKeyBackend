@@ -54,7 +54,7 @@ class SharedFiles(models.Model):
     last_modified_at = models.DateTimeField(default=timezone.now)
     signed_url = models.URLField(default="")
     # download_allowed = models.BooleanField(default=False)
-    # security = models.OneToOneField(SecCheck,on_delete=models.CASCADE,default=SecCheck.objects.create)
+    state = models.CharField(default="active")
 
     class Meta:
         managed = True
