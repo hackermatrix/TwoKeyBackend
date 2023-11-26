@@ -339,6 +339,8 @@ class ShareViewSetReceiver(
         user = request.user
         event = kwargs.get("event")
         file = kwargs.get("file")
+
+
         try:
             n = int(request.GET.get("recs", "0"))
             all_logs = int(request.GET.get("global", "1"))
@@ -348,26 +350,17 @@ class ShareViewSetReceiver(
             )
         except Exception as error:
             return Response({"error": str(error)})
+ 
 
-        # Selecting the type of event
-        if event == "screen":
-            # return self.handle_screen_event_by_file(request, user, n)
-            if file:
-                return self.handle_screen_event_by_file(request, user, file, n)
-            else:
-                return self.handle_screen_event_all(request, user, n)
+        all_events = ["access","download","screen"]
+        if(event in all_events):
 
-        elif event == "access":
+            event_filter = self.event_selector(event)
             if file:
-                return self.handle_access_event_by_file(request, user, file, n)
+                return self.handle_event_by_file(request, event_filter, file, n)
             else:
-                return self.handle_access_event_all(request, user, n)
-            
-        elif event == "download":
-            if file:
-                return self.handle_download_event_by_file(request, user, file, n)
-            else:
-                return self.handle_download_event_all(request, user, n)     
+                return self.handle_event_all(request,event_filter,n)                
+
         elif event == "dues":
             return self.handle_due_event_all(user, n)       
 
@@ -380,81 +373,125 @@ class ShareViewSetReceiver(
         return Response(
             {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
         )
+    
+    def event_selector(self, event_name):
+        event_filter = {
+            "include": {"event": []},
+            "exclude": {"event": []}
+        }
 
+        if event_name == "access":
+            event_filter["include"]["event"].append("file_access")
+        elif event_name == "download":
+            event_filter["include"]["event"].append("download")
+        elif event_name == "screen":
+            event_filter["include"]["event"].append("screenshot")
+
+        return event_filter
+    
+    def handle_event_by_file(self, request, event_filter, file, n):
+        user = request.user
+        try:
+            self.queryset = AccessLog.objects.filter(
+                file=file, org=user.org, event__in=event_filter["include"]["event"]
+            ).order_by("-timestamp")
+            self.lookup_field = "file"
+            self.queryset = self.queryset[:n] if n >= 1 else self.queryset
+            return self.list(request)
+        except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
+            return Response(
+                {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
+            )
+ 
+    def handle_event_all(self,request,event_filter,n):
+        user = request.user
+        try:
+            self.queryset = (
+                AccessLog.objects.filter(
+                    org=user.org, event__in=event_filter["include"]["event"]
+                    ).order_by("-timestamp")
+            )
+            self.lookup_field = "file"
+            self.queryset = self.queryset[:n] if n >= 1 else self.queryset
+            return self.list(request)
+        except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
+            return Response(
+                {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
+            )
     # Functions handling events
-    def handle_screen_event_by_file(self, request, user, file, n):
-        try:
-            self.queryset = AccessLog.objects.filter(
-                file=file, org=user.org, event="screenshot"
-            ).order_by("-timestamp")
-            self.lookup_field = "file"
-            self.queryset = self.queryset[:n] if n >= 1 else self.queryset
-            return self.list(request)
-        except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
-            return Response(
-                {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
-            )
+    # def handle_screen_event_by_file(self, request, user, file, n):
+    #     try:
+    #         self.queryset = AccessLog.objects.filter(
+    #             file=file, org=user.org, event="screenshot"
+    #         ).order_by("-timestamp")
+    #         self.lookup_field = "file"
+    #         self.queryset = self.queryset[:n] if n >= 1 else self.queryset
+    #         return self.list(request)
+    #     except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
+    #         return Response(
+    #             {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
+    #         )
+                    
+    # def handle_screen_event_all(self, request, user, n):
+    #     try:
+    #         self.queryset = AccessLog.objects.filter(
+    #             org=user.org, event="screenshot"
+    #         ).order_by("-timestamp")
+    #         self.lookup_field = "file"
+    #         self.queryset = self.queryset[:n] if n >= 1 else self.queryset
+    #         return self.list(request)
+    #     except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
+    #         return Response(
+    #             {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
+    #         )
 
-    def handle_screen_event_all(self, request, user, n):
-        try:
-            self.queryset = AccessLog.objects.filter(
-                org=user.org, event="screenshot"
-            ).order_by("-timestamp")
-            self.lookup_field = "file"
-            self.queryset = self.queryset[:n] if n >= 1 else self.queryset
-            return self.list(request)
-        except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
-            return Response(
-                {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
-            )
+    # def handle_access_event_by_file(self, request, user, file, n):
+    #     try:
+    #         self.queryset = (
+    #             AccessLog.objects.filter(file=file, org=user.org)
+    #             .exclude(event="screenshot")
+    #             .exclude(event="download")
+    #             .order_by("-timestamp")
+    #         )
+    #         self.lookup_field = "file"
+    #         self.queryset = self.queryset[:n] if n >= 1 else self.queryset
+    #         return self.list(request)
+    #     except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
+    #         return Response(
+    #             {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
+    #         )
 
-    def handle_access_event_by_file(self, request, user, file, n):
-        try:
-            self.queryset = (
-                AccessLog.objects.filter(file=file, org=user.org)
-                .exclude(event="screenshot")
-                .exclude(event="download")
-                .order_by("-timestamp")
-            )
-            self.lookup_field = "file"
-            self.queryset = self.queryset[:n] if n >= 1 else self.queryset
-            return self.list(request)
-        except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
-            return Response(
-                {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-    def handle_access_event_all(self, request, user, n):
-        try:
-            self.queryset = (
-                AccessLog.objects.filter(org=user.org)
-                .exclude(event="screenshot")
-                .exclude(event="download")
-                .order_by("-timestamp")
-            )
-            self.lookup_field = "file"
-            self.queryset = self.queryset[:n] if n >= 1 else self.queryset
-            return self.list(request)
-        except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
-            return Response(
-                {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
-            )
+    # def handle_access_event_all(self, request, user, n):
+    #     try:
+    #         self.queryset = (
+    #             AccessLog.objects.filter(org=user.org)
+    #             .exclude(event="screenshot")
+    #             .exclude(event="download")
+    #             .order_by("-timestamp")
+    #         )
+    #         self.lookup_field = "file"
+    #         self.queryset = self.queryset[:n] if n >= 1 else self.queryset
+    #         return self.list(request)
+    #     except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
+    #         return Response(
+    #             {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
+    #         )
         
-    def handle_download_event_by_file(self, request, user, file, n):
-        try:
-            self.queryset = (
-                AccessLog.objects.filter(file=file, org=user.org,event="download")
-                .order_by("-timestamp")
-            )
-            self.lookup_field = "file"
-            self.queryset = self.queryset[:n] if n >= 1 else self.queryset
-            return self.list(request)
-        except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
-            return Response(
-                {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
-            )
+    # def handle_download_event_by_file(self, request, user, file, n):
+    #     try:
+    #         self.queryset = (
+    #             AccessLog.objects.filter(file=file, org=user.org,event="download")
+    #             .order_by("-timestamp")
+    #         )
+    #         self.lookup_field = "file"
+    #         self.queryset = self.queryset[:n] if n >= 1 else self.queryset
+    #         return self.list(request)
+    #     except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
+    #         return Response(
+    #             {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
+    #         )
 
-    def handle_download_event_all(self, request, user, n):
+    # def handle_download_event_all(self, request, user, n):
         try:
             self.queryset = (
                 AccessLog.objects.filter(org=user.org,event="download")
