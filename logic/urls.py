@@ -13,7 +13,7 @@ urlpatterns = [
     #Dept Paths
     path('dept/listDepts/',DeptView.as_view({'get':'list_depts'}),name="list-depts"),
     path('dept/createDepts/',DeptView.as_view({'post':'create_depts'}),name="create-depts"),
-    re_path(r'^users/deleteDept/?(?P<id>[\w-]*)/?',AUserViewSet.as_view({'delete':'delete_depts'}),name="delete-depts"),
+    re_path(r'^users/deleteDept/?(?P<id>[\w-]*)/?',DeptView.as_view({'delete':'delete_depts'}),name="delete-depts"),
 
     # User Paths For Admins
     re_path(r'^users/list_users/(?P<dept>[\w-]*)/?',AUserViewSet.as_view({'get':'list_users'}),name="list-users"),
