@@ -293,8 +293,6 @@ class ShareViewSetReceiver(
         
         return self.create_log(request,user,event,*args,**kwargs)
         
-
-    
     def create_log(self,request,user,event,*args,**kwargs):
         try:
             file_id = kwargs.get("file")

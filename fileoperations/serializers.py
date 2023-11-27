@@ -65,11 +65,12 @@ class SharedFileSerializer(serializers.ModelSerializer):
         # Adding the signed_url to the share:
         security_check = validated_data.pop('security_check')
         file_name = validated_data['file'].name
-        expiration_time = validated_data['expiration_time']
-        res = supabase.storage.from_(config('BUCKET_NAME')).create_signed_url(file_name,expiration_time*60)
+        expiration_time = validated_data['expiration_time']*60
+        validated_data['expiration_time'] = expiration_time
+        res = supabase.storage.from_(config('BUCKET_NAME')).create_signed_url(file_name,expiration_time)
         signed_url = res['signedURL']
         validated_data.update({'signed_url':signed_url})
-
+       
 
         # Creating SecCheck Object.
         created = super().create(validated_data)
