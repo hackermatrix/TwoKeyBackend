@@ -85,9 +85,12 @@ class AUserViewSet(
     mixins.ListModelMixin,
     mixins.UpdateModelMixin,
     mixins.RetrieveModelMixin,
+    mixins.DestroyModelMixin,
     GenericViewSet,
 ):
+    # Default Permission required for this class
     permission_classes = [OrgadminRequired]
+
     queryset = UserInfo.objects.all()
     serializer_class = AUserInfoSerializer
     authentication_classes = [SupabaseAuthBackend]
@@ -176,6 +179,12 @@ class AUserViewSet(
 
         return Response(combined_data, status=status.HTTP_200_OK)
 
+    def delete_user(self, request,**kwargs):
+        user = request.user
+        self.lookup_field = 'id'
+        self.queryset = UserInfo.objects.filter(org = user.org_id)
+        return self.destroy(request,**kwargs)
+    
     def get_permissions(self):
         if self.action == "list_users":
             self.permission_classes = [OthersPerm]
