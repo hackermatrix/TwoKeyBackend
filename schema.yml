@@ -368,6 +368,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/Role'
           description: ''
+  /users/deleteUser/{id}/:
+    delete:
+      operationId: users_deleteUser_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[\w-]*$
+        required: true
+      tags:
+      - users
+      responses:
+        '204':
+          description: No response body
   /users/elevate/{id}:
     put:
       operationId: users_elevate_update
