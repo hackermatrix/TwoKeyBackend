@@ -76,6 +76,7 @@ class DeptView(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.DestroyMod
     
     def delete_depts(self, request, *args, **kwargs):
         user = request.user
+        self.lookup_field = "id"
         self.queryset = Departments.objects.filter(org = user.org_id)
         return self.destroy(request,**kwargs)
 
