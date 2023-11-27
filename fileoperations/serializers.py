@@ -110,7 +110,7 @@ class SharedFileSerializer(serializers.ModelSerializer):
 
         if fields_to_include:
             data = {key: value for key, value in data.items() if key in fields_to_include}
-        
+            data['shared_with'] = [{"user_id":str(user.id),"user_email":user.email,"profile_pic":user.profile_pic , "first_name":user.name,"last_name":user.last_name} for user in instance.shared_with.all()]
 
 
         return data
