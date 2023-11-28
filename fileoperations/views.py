@@ -36,11 +36,7 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
     queryset = Objects.objects.all()
 
 
-    def dispatch(self, request, *args, **kwargs):
-        response = super().dispatch(request, *args, **kwargs)
-        print('Queries :',connection.queries)
-        print('Queries count :',len(connection.queries))
-        return response
+
 
     # List all files uploaded by all users from all departments.
     def get(self, request, *args, **kwargs):
@@ -85,7 +81,8 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
         return self.list(request, *args, **kwargs)
 
     def get_files_owned_by_user(self, user):
-        files_owned_by_user = Objects.objects.filter(owner=user)
+        files_owned_by_user = Objects.objects.prefetch_related("owner").filter(owner=user)
+        
         owned_files_data = FileSerializer(files_owned_by_user, many=True).data
         return Response (owned_files_data)
 
@@ -219,6 +216,12 @@ class ShareViewSetReceiver(
     serializer_class = SharedFilesRecepient
     authentication_classes = [SupabaseAuthBackend]
     permission_classes = [OthersPerm]
+
+    def dispatch(self, request, *args, **kwargs):
+        response = super().dispatch(request, *args, **kwargs)
+        print('Queries :',connection.queries)
+        print('Queries count :',len(connection.queries))
+        return response
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -516,10 +519,10 @@ class ShareViewSetReceiver(
         self.serializer_class = SharedFileSerializer
         try:
             self.queryset = (
-                SharedFiles.objects.prefetch_related("file").filter(file__owner__org=user.org,state="due")
-                .order_by("-last_modified_at")
-
-            )
+                        SharedFiles.objects.prefetch_related("file").select_related("file__owner__org")
+                        .filter(file__owner__org=user.org, state="due")
+                        .order_by("-last_modified_at")
+                            )
             self.queryset = self.queryset[:n] if n >= 1 else self.queryset
             fields =['file_name','last_updated','expiration_time','shared_with']
             serializer = self.get_serializer(self.queryset, many=True,context={'fields':fields})

@@ -37,8 +37,9 @@ class SecCheckSerializer(serializers.ModelSerializer):
 
 
 
-
 class SharedFileSerializer(serializers.ModelSerializer):
+    BUCKET_NAME = config('BUCKET_NAME')
+
     shared_with = serializers.ListField(child=serializers.UUIDField(), write_only=True)
     file_name = serializers.CharField(source='file.name', read_only=True)
     owner = serializers.SerializerMethodField()
@@ -47,60 +48,55 @@ class SharedFileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SharedFiles
-        fields = ["file","owner", "file_name",'last_updated', 'shared_with','expiration_time',"security_check"]
+        fields = ["file", "owner", "file_name", 'last_updated', 'shared_with', 'expiration_time', "security_check"]
+
 
     def create(self, validated_data):
-        # Adding the signed_url to the share:
         security_check = validated_data.pop('security_check')
         file_name = validated_data['file'].name
-        expiration_time = validated_data['expiration_time']*60
+        expiration_time = validated_data['expiration_time'] * 60
         validated_data['expiration_time'] = expiration_time
-        res = supabase.storage.from_(config('BUCKET_NAME')).create_signed_url(file_name,expiration_time)
-        signed_url = res['signedURL']
-        validated_data.update({'signed_url':signed_url})
-       
+        signed_url = supabase.storage.from_(self.BUCKET_NAME).create_signed_url(file_name, expiration_time)['signedURL']
+        validated_data['signed_url'] = signed_url
 
-        # Creating SecCheck Object.
         created = super().create(validated_data)
-        SecCheck(shared=created,**security_check).save()
-        # print(temp)
+        SecCheck(shared=created, **security_check).save()
         return created
-    
-    def get_last_updated(self,obj):
+
+    def get_last_updated(self, obj):
         return obj.file.updated_at
-    
-    def get_owner(self,obj):
+
+    def get_owner(self, obj):
         return obj.file.owner.email
-    
+
     def get_user_ids(self, emails):
-        user_ids = []
-        for email in emails:
-            try:
-                user = UserInfo.objects.get(email=email.lower())
-                user_ids.append(user.id)
-            except UserInfo.DoesNotExist:
-                # Handle or log the exception as needed
-                pass
-        return user_ids
+        return list(UserInfo.objects.filter(email__in=[email.lower() for email in emails]).values_list('id', flat=True))
+
+    def get_user_representation(self, user):
+        return {
+            "user_id": str(user.id),
+            "user_email": user.email,
+            "profile_pic": user.profile_pic,
+            "first_name": user.name,
+            "last_name": user.last_name,
+        }
 
     def to_representation(self, instance):
-        # print(dir(instance))
-        # print(instance.security_check)
         data = super().to_representation(instance)
         data.pop("security_check")
-        
-        serializer = SecCheckSerializer(SecCheck.objects.get(shared=SharedFiles.objects.get(file=data['file'])))
+
+        serializer = SecCheckSerializer(SecCheck.objects.get(shared__file=data['file']))
         data["security_check"] = serializer.data
 
-        data['shared_with'] = [{"user_id":str(user.id),"user_email":user.email,"profile_pic":user.profile_pic} for user in instance.shared_with.all()]
-        
+        users = instance.shared_with.all()
+        data['shared_with'] = [self.get_user_representation(user) for user in users]
 
+        # If Context Specified, output fields can be reduced.
         fields_to_include = self.context.get('fields')
 
         if fields_to_include:
             data = {key: value for key, value in data.items() if key in fields_to_include}
-            data['shared_with'] = [{"user_id":str(user.id),"user_email":user.email,"profile_pic":user.profile_pic , "first_name":user.name,"last_name":user.last_name} for user in instance.shared_with.all()]
-
+            data['shared_with'] = [self.get_user_representation(user) for user in users]
 
         return data
     
