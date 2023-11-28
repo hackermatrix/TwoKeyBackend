@@ -3,6 +3,7 @@ from django.core import exceptions
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import Distance
 from decouple import config
+from django.db import connection, reset_queries
 from django.shortcuts import get_object_or_404
 
 from rest_framework.viewsets import GenericViewSet
@@ -33,6 +34,13 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
     authentication_classes = [SupabaseAuthBackend]
     permission_classes = [OthersPerm]
     queryset = Objects.objects.all()
+
+
+    def dispatch(self, request, *args, **kwargs):
+        response = super().dispatch(request, *args, **kwargs)
+        print('Queries :',connection.queries)
+        print('Queries count :',len(connection.queries))
+        return response
 
     # List all files uploaded by all users from all departments.
     def get(self, request, *args, **kwargs):
@@ -330,7 +338,7 @@ class ShareViewSetReceiver(
             )
         except Exception as error:
             return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
-
+    
     # Fetch the screen shot attempts for Current user's files
     def get_logs(self, request, *args, **kwargs):
         self.serializer_class = AccessLogSerializer
@@ -389,9 +397,10 @@ class ShareViewSetReceiver(
     
     def handle_event_by_file(self, request, event_filter, file, n):
         user = request.user
+        user_org = user.org
         try:
-            self.queryset = AccessLog.objects.filter(
-                file=file, org=user.org, event__in=event_filter["include"]["event"]
+            self.queryset = AccessLog.objects.select_related('org').filter(
+                file=file, org=user_org, event__in=event_filter["include"]["event"]
             ).order_by("-timestamp")
             self.lookup_field = "file"
             self.queryset = self.queryset[:n] if n >= 1 else self.queryset

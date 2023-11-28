@@ -13,23 +13,12 @@ from .models import AccessLog, AllowedLocations, Objects, SecCheck, SharedFiles
 
 
 class FileSerializer(ModelSerializer):
-    org_name = serializers.SerializerMethodField()
-    dept_name = serializers.SerializerMethodField()
     metadata =serializers.JSONField
 
-
-    def get_org_name(self,obj):
-        owner = getattr(obj, 'owner', None)
-        if(owner):
-            return owner.org.name
-    def get_dept_name(self,obj):
-        owner = getattr(obj, 'owner', None)
-        if(owner):
-            return owner.dept.name
         
     class Meta:
         model = Objects
-        fields = ['id','name','org_name','dept_name','metadata']
+        fields = ['id','name','metadata']
     def to_representation(self, instance):
         data = super().to_representation(instance)
         # print(instance.owner.email)
@@ -40,7 +29,6 @@ class FileSerializer(ModelSerializer):
         data['metadata'].pop('httpStatusCode')
         
         return data
-
 
 class SecCheckSerializer(serializers.ModelSerializer):
     class Meta:
@@ -128,6 +116,7 @@ class AccessLogSerializer(ModelSerializer):
     class Meta:
         model = AccessLog
         exclude = ["timestamp","id"]
+        
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data['user'] = instance.user_email
@@ -141,6 +130,45 @@ class AccessLogSerializer(ModelSerializer):
             data['profile_pic'] ="placeholder"
         data['timestamp'] = instance.timestamp
         return data
+    
+
+
+
+# class AccessLogSerializer(serializers.ModelSerializer):
+#     user = serializers.SerializerMethodField()
+#     username = serializers.SerializerMethodField()
+#     file = serializers.SerializerMethodField()
+#     profile_pic = serializers.SerializerMethodField()
+
+#     class Meta:
+#         model = AccessLog
+#         exclude = ["timestamp", "id"]
+
+#     def get_file(self, instance):
+#         return instance.file_name  # Assuming file_name is a field in AccessLog
+
+#     def get_profile_pic(self, instance):
+#         try:
+#             user_obj = UserInfo.objects.get(id=instance.user)
+#             return user_obj.profile_pic
+#         except UserInfo.DoesNotExist:
+#             return "placeholder"
+#     def get_user(self, instance):
+#         return instance.user_email
+
+#     def to_representation(self, instance):
+#         data = super().to_representation(instance)
+#         data['timestamp'] = instance.timestamp
+#         return data
+
+
+
+
+
+
+
+
+
     
 
 class AllowedLocationSerializer(GeoFeatureModelSerializer):
