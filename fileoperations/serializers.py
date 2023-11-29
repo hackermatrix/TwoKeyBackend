@@ -108,54 +108,56 @@ class SharedFilesRecepient(ModelSerializer):
 
 
 
-class AccessLogSerializer(ModelSerializer):
-    class Meta:
-        model = AccessLog
-        exclude = ["timestamp","id"]
+# class AccessLogSerializer(ModelSerializer):
+#     class Meta:
+#         model = AccessLog
+#         exclude = ["timestamp","id"]
         
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data['user'] = instance.user_email
-        data['username'] = instance.username
-        # data['file'] = Objects.objects.get(id=data['file']).name
-        data['file'] = instance.file_name
-        try:
-            userobj = UserInfo.objects.get(id=instance.user)
-            data['profile_pic'] = userobj.profile_pic
-        except:
-            data['profile_pic'] ="placeholder"
-        data['timestamp'] = instance.timestamp
-        return data
+#     def to_representation(self, instance):
+#         data = super().to_representation(instance)
+#         data['user'] = instance.user_email
+#         data['username'] = instance.username
+#         # data['file'] = Objects.objects.get(id=data['file']).name
+#         data['file'] = instance.file_name
+#         try:
+#             userobj = UserInfo.objects.get(id=instance.user)
+#             data['profile_pic'] = userobj.profile_pic
+#         except:
+#             data['profile_pic'] ="placeholder"
+#         data['timestamp'] = instance.timestamp
+#         return data
     
 
 
 
-# class AccessLogSerializer(serializers.ModelSerializer):
-#     user = serializers.SerializerMethodField()
-#     username = serializers.SerializerMethodField()
-#     file = serializers.SerializerMethodField()
-#     profile_pic = serializers.SerializerMethodField()
+class AccessLogSerializer(serializers.ModelSerializer):
+    # user = serializers.SerializerMethodField()
+    # username = serializers.SerializerMethodField()
+    # file = serializers.SerializerMethodField()
+    profile_pic = serializers.SerializerMethodField()
 
-#     class Meta:
-#         model = AccessLog
-#         exclude = ["timestamp", "id"]
+    class Meta:
+        model = AccessLog
+        exclude = ["timestamp", "id"]
 
-#     def get_file(self, instance):
-#         return instance.file_name  # Assuming file_name is a field in AccessLog
+    def get_file(self, instance):
+        return instance.file_name  # Assuming file_name is a field in AccessLog
 
-#     def get_profile_pic(self, instance):
-#         try:
-#             user_obj = UserInfo.objects.get(id=instance.user)
-#             return user_obj.profile_pic
-#         except UserInfo.DoesNotExist:
-#             return "placeholder"
-#     def get_user(self, instance):
-#         return instance.user_email
+    def get_profile_pic(self, instance):
+        try:
+            user_obj = UserInfo.objects.get(id=instance.user)
+            return user_obj.profile_pic
+        except UserInfo.DoesNotExist:
+            return "placeholder"
+    def get_user(self, instance):
+        return instance.user_email
+    def get_username(self, instance):
+        return instance.username
 
-#     def to_representation(self, instance):
-#         data = super().to_representation(instance)
-#         data['timestamp'] = instance.timestamp
-#         return data
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['timestamp'] = instance.timestamp
+        return data
 
 
 

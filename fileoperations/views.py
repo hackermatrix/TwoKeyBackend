@@ -518,8 +518,8 @@ class ShareViewSetReceiver(
     def handle_due_event_all(self,user, n):
         self.serializer_class = SharedFileSerializer
         try:
-            self.queryset = (
-                        SharedFiles.objects.prefetch_related("file").select_related("file__owner__org")
+            self.queryset = (   
+                        SharedFiles.objects.select_related("file__owner__org")
                         .filter(file__owner__org=user.org, state="due")
                         .order_by("-last_modified_at")
                             )
@@ -533,8 +533,9 @@ class ShareViewSetReceiver(
             )
         
     def handle_all_by_file(self, request, user, file, n):
+        user_org = user.org
         try:
-            self.queryset = AccessLog.objects.filter(file=file, org=user.org).order_by(
+            self.queryset = AccessLog.objects.filter(file=file, org=user_org).order_by(
                 "-timestamp"
             )
             self.lookup_field = "file"
@@ -564,11 +565,21 @@ class ShareViewSetReceiver(
             )
 
 
-class GeoLocationView(mixins.CreateModelMixin, mixins.ListModelMixin, GenericViewSet):
+class GeoLocationView(mixins.CreateModelMixin, 
+                      mixins.ListModelMixin,
+                      mixins.UpdateModelMixin,
+                      mixins.DestroyModelMixin, 
+                      GenericViewSet):
     permission_classes = [OrgadminRequired]
     authentication_classes = [SupabaseAuthBackend]
     serializer_class = AllowedLocationSerializer
     queryset = AllowedLocations.objects.all()
+    lookup_field = "id"
+    def dispatch(self, request, *args, **kwargs):
+        response = super().dispatch(request, *args, **kwargs)
+        print('Queries :',connection.queries)
+        print('Queries count :',len(connection.queries))
+        return response
 
     def perform_create(self, serializer):
         try:
@@ -589,6 +600,16 @@ class GeoLocationView(mixins.CreateModelMixin, mixins.ListModelMixin, GenericVie
         user_org = request.user.org
         self.queryset = AllowedLocations.objects.filter(org=user_org)
         return self.list(request)
+    def update_location(self,request,**kwargs):
+
+        user_org = request.user.org
+        self.queryset = AllowedLocations.objects.filter(org=user_org)
+        return self.update(request,**kwargs)
+
+    def delete_location(self,request,**kwargs):
+        user_org = request.user.org
+        self.queryset = AllowedLocations.objects.filter(org=user_org)
+        return self.destroy(request,**kwargs)
 
     def get_permissions(self):
         if self.action == "get_locations":
