@@ -1,4 +1,5 @@
 import uuid
+from django.core.cache import cache
 from django.core import exceptions
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import Distance
@@ -35,6 +36,9 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
     permission_classes = [OthersPerm]
     queryset = Objects.objects.all()
 
+    # cache_key_prefix = 'files_owned_by_user_'
+    # cache_timeout = 60  # Cache for 60 seconds
+    
     def dispatch(self, request, *args, **kwargs):
         response = super().dispatch(request, *args, **kwargs)
         print('Queries :',connection.queries)
@@ -90,6 +94,44 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
         
         owned_files_data = FileSerializer(files_owned_by_user, many=True).data
         return Response (owned_files_data)
+
+
+    # def get_files_owned_by_user(self, user):
+    #     # Generate a unique cache key for the specific user
+    #     cache_key = f"{self.cache_key_prefix}{user.id}"
+
+    #     # Try to get data from the cache
+    #     cached_data = cache.get(cache_key)
+
+    #     print("YOOAOAOAOAOAO",cached_data   )
+
+    #     if cached_data is not None:
+    #         # Data found in the cache
+    #         return Response(cached_data)
+
+    #     # Data not found in the cache, query the database
+    #     files_owned_by_user = self.get_files_from_database(user)
+
+    #     # Serialize the data
+    #     owned_files_data = FileSerializer(files_owned_by_user, many=True).data
+
+    #     # Save data to the cache
+    #     cache.set(cache_key, owned_files_data, self.cache_timeout)
+
+    #     # Return the response
+    #     return Response(owned_files_data)
+
+    # def get_files_from_database(self, user):
+    #     # Implement your logic to query the database and retrieve the files owned by the user
+    #     # For example:
+    #     print("wwwalwlwl")
+    #     files = Objects.objects.prefetch_related("owner").filter(owner=user)
+    #     return files
+
+
+
+
+
 
     def get_files_shared_by_user(self, user):
         # Fetching files shared by user

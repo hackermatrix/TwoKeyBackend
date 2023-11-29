@@ -24,5 +24,5 @@ urlpatterns = [
     re_path(r'createLocation/?',GeoLocationView.as_view({'post':'create_location'}),name="Creating an allowed location"),
     re_path(r'listLocation/?',GeoLocationView.as_view({"get":"get_locations"}),name="List all the allowed locations"),
     re_path(r'deleteLocation/(?P<id>[\w-]*)/?',GeoLocationView.as_view({"delete":"delete_location"}),name="Delete locations"),
-    re_path(r'updateLocation/(?P<file>[\w-]*)/?',GeoLocationView.as_view({"put":"update_location"}),name="Update locations"),
+    re_path(r'updateLocation/(?P<id>[\w-]*)/?',GeoLocationView.as_view({"put":"update_location"}),name="Update locations"),
 ]
