@@ -65,6 +65,7 @@ class AllowedLocations(models.Model):
     org = models.ForeignKey(Organizations,on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
     location_point = location_model.PointField()
+    address_info = models.JSONField(default=dict)
     class Meta:
         db_table = 'allowed_locations'
 class SecCheck(models.Model):

@@ -173,7 +173,7 @@ class AllowedLocationSerializer(GeoFeatureModelSerializer):
     class Meta:
         model = AllowedLocations
         geo_field = 'location_point' 
-        fields =['name','location_point']
+        fields =['name','location_point','address_info']
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data['id'] = instance.id
