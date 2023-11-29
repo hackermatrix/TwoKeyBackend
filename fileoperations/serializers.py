@@ -14,11 +14,11 @@ from .models import AccessLog, AllowedLocations, Objects, SecCheck, SharedFiles
 
 class FileSerializer(ModelSerializer):
     metadata =serializers.JSONField
-
+    profile_pic = serializers.SerializerMethodField()
         
     class Meta:
         model = Objects
-        fields = ['id','name','metadata']
+        fields = ['id','name','metadata',"profile_pic"]
     def to_representation(self, instance):
         data = super().to_representation(instance)
         # print(instance.owner.email)
@@ -29,6 +29,9 @@ class FileSerializer(ModelSerializer):
         data['metadata'].pop('httpStatusCode')
         
         return data
+    
+    def get_profile_pic(self,instance):
+        return instance.owner.profile_pic
 
 class SecCheckSerializer(serializers.ModelSerializer):
     class Meta:
