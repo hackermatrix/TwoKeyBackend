@@ -119,6 +119,7 @@ class AUserViewSet(
             self.queryset = (
                 UserInfo.objects.filter(org=org_id)
                 .exclude(id=request.user.id)
+                .order_by("-role_priv")
             )
             # self.queryset = Users.objects.filter(org=org_id)
         return self.list(request, context={'request':request}, **kwargs)

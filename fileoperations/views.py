@@ -52,6 +52,14 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
         dept_choice = kwargs.get("dept")
         file_type = request.GET.get("type")
         user = request.user
+        try:
+            n = int(request.GET.get("recs", "0"))
+        except ValueError:
+            return Response(
+                {"error": "invalid parameter"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as error:
+            return Response({"error": str(error)})
 
         if file_type == "owned":
             return self.get_files_owned_by_user(user)
@@ -60,9 +68,9 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
         elif file_type == "shared":
             return self.get_files_shared_by_user(user)
         else:
-            return self.get_all_files(request,dept_choice)
+            return self.get_all_files(request,dept_choice,n)
 
-    def get_all_files(self,request,dept_choice,*args,**kwargs):
+    def get_all_files(self,request,dept_choice,n,*args,**kwargs):
         if dept_choice:
             try:
                 res = Departments.objects.get(name=dept_choice)
@@ -87,6 +95,7 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
                 .exclude(name=".emptyFolderPlaceholder")
                 .order_by("-created_at")
             )
+        self.queryset = self.queryset[:n] if n >= 1 else self.queryset
         return self.list(request, *args, **kwargs)
 
     def get_files_owned_by_user(self, user):
