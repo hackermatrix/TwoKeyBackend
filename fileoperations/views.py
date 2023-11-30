@@ -240,7 +240,12 @@ class ShareViewSetSender(
     def edit_access(self, request, **kwargs):
         file_id = kwargs.get("file")
         self.lookup_field = "file"
-        if self.check_file_ownership(request, file_id):
+        user = request.user
+        org_id = user.org
+        user_role = user.role_priv
+        if(user_role == "org_admin"):
+            return self.partial_update(request, **kwargs)
+        elif self.check_file_ownership(request, file_id):
             return self.partial_update(request, **kwargs)
         else:
             return Response(
@@ -331,7 +336,7 @@ class ShareViewSetReceiver(
             self.queryset = Objects.objects.filter(owner=user)
             objs = get_object_or_404(self.queryset, id=kwargs.get("file"))
             signed_url = create_signed(objs.name, 60)
-            return Response({"id": objs.id, "signed_url": signed_url["signedURL"]})
+            return Response({"id": objs.id, "signed_url": signed_url})
 
     def event_log_handler(self, request, *args, **kwargs):
         # Only files shared with the current user

@@ -1,9 +1,10 @@
+from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from rest_framework.fields import empty
 from rest_framework.serializers import ModelSerializer
 from rest_framework import serializers
 from django.core.exceptions import ObjectDoesNotExist,ValidationError
-from .utils.supa import supabase
+from .utils.supa import supabase , create_signed
 from logic.models import UserInfo
 from decouple import config
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
@@ -57,14 +58,26 @@ class SharedFileSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         security_check = validated_data.pop('security_check')
         file_name = validated_data['file'].name
-        expiration_time = validated_data['expiration_time'] * 60
-        validated_data['expiration_time'] = expiration_time
+        expiration_time = validated_data['expiration_time']
         signed_url = supabase.storage.from_(self.BUCKET_NAME).create_signed_url(file_name, expiration_time)['signedURL']
         validated_data['signed_url'] = signed_url
 
         created = super().create(validated_data)
         SecCheck(shared=created, **security_check).save()
         return created
+    
+    def update(self, instance, validated_data):
+        file_name = instance.file.name
+        if('expiration_time' in validated_data.keys()):
+            expiration_time = validated_data['expiration_time']
+            new_presigned_url = create_signed(file_name,expiration_time*60)
+            validated_data['signed_url'] = new_presigned_url
+            validated_data['last_modified_at'] = timezone.now()
+
+            # Modify THis Later
+        if('security_check' in validated_data.keys()):
+            validated_data.pop("security_check")
+        return super().update(instance, validated_data)
 
     def get_last_updated(self, obj):
         return obj.file.updated_at
