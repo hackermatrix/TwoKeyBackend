@@ -319,7 +319,10 @@ class ShareViewSetReceiver(
     def get_shared_file_url(self, request, *args, **kwargs):
         # Only files shared with the current user
         user = request.user
+        user_role = user.role_priv
+        user_org = user.org
         self.lookup_field = "file"
+        
         if not self.check_file_ownership(request, kwargs.get("file")):
             self.queryset = SharedFiles.objects.filter(shared_with__id=request.user.id)
             response = self.retrieve(request, *args, **kwargs)
@@ -342,7 +345,10 @@ class ShareViewSetReceiver(
 
             return response
         else:
-            self.queryset = Objects.objects.filter(owner=user)
+            if(user_role == "org_admin"):
+                self.queryset = Objects.objects.prefetch_related("owner").filter(owner__org=user_org)
+            else:
+                self.queryset = Objects.objects.filter(owner=user)
             objs = get_object_or_404(self.queryset, id=kwargs.get("file"))
             signed_url = create_signed(objs.name, 60)
             return Response({"id": objs.id, "signed_url": signed_url})
@@ -403,6 +409,7 @@ class ShareViewSetReceiver(
         except Exception as error:
             return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
     
+
     # Fetch the screen shot attempts for Current user's files
     def get_logs(self, request, *args, **kwargs):
         self.serializer_class = AccessLogSerializer
