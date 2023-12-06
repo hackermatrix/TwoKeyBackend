@@ -328,10 +328,10 @@ class ShareViewSetReceiver(
                 self.queryset = Objects.objects.select_related("owner").filter(owner__org=user_org)
                 objs = get_object_or_404(self.queryset, id=kwargs.get("file"))
                 signed_url = create_signed(objs.name, 60)
-                return Response({"id": objs.id, "signed_url": signed_url})
+                response = Response({"id": objs.id, "signed_url": signed_url})
             else:
                 self.queryset = SharedFiles.objects.filter(shared_with__id=request.user.id)
-            response = self.retrieve(request, *args, **kwargs)
+                response = self.retrieve(request, *args, **kwargs)
             if response.status_code == 200:
                 file_id = kwargs.get("file")
                 access_log_data = {
