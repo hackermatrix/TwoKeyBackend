@@ -322,7 +322,7 @@ class ShareViewSetReceiver(
         user_role = user.role_priv
         user_org = user.org
         self.lookup_field = "file"
-        
+
         if not self.check_file_ownership(request, kwargs.get("file")):
             self.queryset = SharedFiles.objects.filter(shared_with__id=request.user.id)
             response = self.retrieve(request, *args, **kwargs)
@@ -346,7 +346,7 @@ class ShareViewSetReceiver(
             return response
         else:
             if(user_role == "org_admin"):
-                self.queryset = Objects.objects.prefetch_related("owner").filter(owner__org=user_org)
+                self.queryset = Objects.objects.select_related("owner").filter(owner__org=user_org)
             else:
                 self.queryset = Objects.objects.filter(owner=user)
             objs = get_object_or_404(self.queryset, id=kwargs.get("file"))
