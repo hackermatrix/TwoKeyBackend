@@ -324,7 +324,13 @@ class ShareViewSetReceiver(
         self.lookup_field = "file"
 
         if not self.check_file_ownership(request, kwargs.get("file")):
-            self.queryset = SharedFiles.objects.filter(shared_with__id=request.user.id)
+            if(user_role == "org_admin"):
+                self.queryset = Objects.objects.select_related("owner").filter(owner__org=user_org)
+                objs = get_object_or_404(self.queryset, id=kwargs.get("file"))
+                signed_url = create_signed(objs.name, 60)
+                return Response({"id": objs.id, "signed_url": signed_url})
+            else:
+                self.queryset = SharedFiles.objects.filter(shared_with__id=request.user.id)
             response = self.retrieve(request, *args, **kwargs)
             if response.status_code == 200:
                 file_id = kwargs.get("file")
@@ -345,10 +351,8 @@ class ShareViewSetReceiver(
 
             return response
         else:
-            if(user_role == "org_admin"):
-                self.queryset = Objects.objects.select_related("owner").filter(owner__org=user_org)
-            else:
-                self.queryset = Objects.objects.filter(owner=user)
+            
+            self.queryset = Objects.objects.filter(owner=user)
             objs = get_object_or_404(self.queryset, id=kwargs.get("file"))
             signed_url = create_signed(objs.name, 60)
             return Response({"id": objs.id, "signed_url": signed_url})
