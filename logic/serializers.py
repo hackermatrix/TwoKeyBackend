@@ -47,6 +47,11 @@ class AUserInfoSerializer(ModelSerializer):
             current_user = Users.objects.get(id=instance.id)
             data["created_at"] = current_user.created_at
             data["last_sign_in_at"]=current_user.last_sign_in_at
+            data['country'] = instance.country
+            data['state'] = instance.state
+            data['city'] = instance.city
+            data['postalcode'] = instance.postal_code
+            data['phone'] = instance.phone
             
         return data
 
