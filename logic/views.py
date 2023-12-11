@@ -183,7 +183,7 @@ class AUserViewSet(
             # Fetching files owned by user
             files_owned_by_user = Objects.objects.filter(owner=instance)
             owned_files_data = FileSerializer(files_owned_by_user, many=True).data
-            combined_data["owned_files"] = owned_files_data
+            combined_data["files"] = owned_files_data
 
         elif file_type == "received":
             # Fetching files shared with the user
@@ -191,7 +191,7 @@ class AUserViewSet(
                 sharedfiles__shared_with=instance
             )
             shared_files_data = FileSerializer(files_shared_with_user, many=True).data
-            combined_data["received_files"] = shared_files_data
+            combined_data["files"] = shared_files_data
 
         elif file_type == "shared":
             # Fetching files shared by user
@@ -201,7 +201,7 @@ class AUserViewSet(
             shared_files_by_user_data = FileSerializer(
                 files_shared_by_user, many=True
             ).data
-            combined_data["shared_files"] = shared_files_by_user_data
+            combined_data["files"] = shared_files_by_user_data
 
         # User profile data
         user_data = self.get_serializer(instance).data
