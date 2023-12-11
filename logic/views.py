@@ -158,15 +158,26 @@ class AUserViewSet(
         user = request.user
         user_org = user.org
         instance = self.get_object()
-        file_type = request.GET.get("type")  
-        logs = request.GET.get("logs","0")
+
+        try:
+            n = int(request.GET.get("recs", "0"))
+            file_type = request.GET.get("type")  
+            logs = request.GET.get("logs","0")
+        except ValueError:
+            return Response(
+                {"error": "invalid parameter"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as error:
+            return Response({"error": str(error)})
         
         if(logs == "1"):
-            print("yee")
             self.serializer_class = AccessLogSerializer
             user_id = kwargs.get("id")
-            self.queryset = AccessLog.objects.filter(org_id = user_org.id,user=user_id)
+            self.queryset = AccessLog.objects.filter(org_id = user_org.id,user=user_id).order_by("-timestamp")
+            self.queryset = self.queryset[:n] if n >= 1 else self.queryset
             return self.list(request)
+        
+
         combined_data = {}
         if file_type == "owned":
             # Fetching files owned by user
