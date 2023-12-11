@@ -17,8 +17,8 @@ from authenticate.models import Users
 from authenticate.serializers import UsersSerializer
 from backend.custom_perm_classes import *
 from backend.supabase_auth import SupabaseAuthBackend
-from fileoperations.models import Objects, SharedFiles
-from fileoperations.serializers import FileSerializer, SharedFileSerializer
+from fileoperations.models import AccessLog, Objects, SharedFiles
+from fileoperations.serializers import AccessLogSerializer, FileSerializer, SharedFileSerializer
 from logic.models import *
 from logic.serializers import *
 from rest_framework.request import Request
@@ -155,8 +155,18 @@ class AUserViewSet(
     # type = owned or received or shared
     def get_user_info(self, request, **kwargs):
         # Queried user instance
+        user = request.user
+        user_org = user.org
         instance = self.get_object()
-        file_type = request.GET.get("type")
+        file_type = request.GET.get("type")  
+        logs = request.GET.get("logs","0")
+        
+        if(logs == "1"):
+            print("yee")
+            self.serializer_class = AccessLogSerializer
+            user_id = kwargs.get("id")
+            self.queryset = AccessLog.objects.filter(org_id = user_org.id,user=user_id)
+            return self.list(request)
         combined_data = {}
         if file_type == "owned":
             # Fetching files owned by user
