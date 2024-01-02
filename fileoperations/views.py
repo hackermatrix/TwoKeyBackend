@@ -38,14 +38,12 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
 
     # cache_key_prefix = 'files_owned_by_user_'
     # cache_timeout = 60  # Cache for 60 seconds
-    
+
     def dispatch(self, request, *args, **kwargs):
         response = super().dispatch(request, *args, **kwargs)
-        print('Queries :',connection.queries)
-        print('Queries count :',len(connection.queries))
+        print("Queries :", connection.queries)
+        print("Queries count :", len(connection.queries))
         return response
-
-
 
     # List all files uploaded by all users from all departments.
     def get(self, request, *args, **kwargs):
@@ -62,15 +60,15 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
             return Response({"error": str(error)})
 
         if file_type == "owned":
-            return self.get_files_owned_by_user(user)
+            return self.get_files_owned_by_user(request, user)
         elif file_type == "received":
-            return self.get_files_shared_to_user(user)
+            return self.get_files_shared_to_user(request, user)
         elif file_type == "shared":
-            return self.get_files_shared_by_user(user)
+            return self.get_files_shared_by_user(request, user)
         else:
-            return self.get_all_files(request,dept_choice,n)
+            return self.get_all_files(request, dept_choice, n)
 
-    def get_all_files(self,request,dept_choice,n,*args,**kwargs):
+    def get_all_files(self, request, dept_choice, n, *args, **kwargs):
         if dept_choice:
             try:
                 res = Departments.objects.get(name=dept_choice)
@@ -90,7 +88,7 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
             )
         else:
             self.queryset = (
-                Objects.objects.prefetch_related("owner")
+                Objects.objects.select_related("owner")
                 .filter(owner__org=request.user.org, bucket_id="TwoKey")
                 .exclude(name=".emptyFolderPlaceholder")
                 .order_by("-created_at")
@@ -98,61 +96,19 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
         self.queryset = self.queryset[:n] if n >= 1 else self.queryset
         return self.list(request, *args, **kwargs)
 
-    def get_files_owned_by_user(self, user):
-        files_owned_by_user = Objects.objects.prefetch_related("owner").filter(owner=user)
-        
-        owned_files_data = FileSerializer(files_owned_by_user, many=True).data
-        return Response (owned_files_data)
+    def get_files_owned_by_user(self, request, user):
+        self.queryset = Objects.objects.prefetch_related("owner").filter(owner=user)
+        return self.list(request)
 
-
-    # def get_files_owned_by_user(self, user):
-    #     # Generate a unique cache key for the specific user
-    #     cache_key = f"{self.cache_key_prefix}{user.id}"
-
-    #     # Try to get data from the cache
-    #     cached_data = cache.get(cache_key)
-
-    #     print("YOOAOAOAOAOAO",cached_data   )
-
-    #     if cached_data is not None:
-    #         # Data found in the cache
-    #         return Response(cached_data)
-
-    #     # Data not found in the cache, query the database
-    #     files_owned_by_user = self.get_files_from_database(user)
-
-    #     # Serialize the data
-    #     owned_files_data = FileSerializer(files_owned_by_user, many=True).data
-
-    #     # Save data to the cache
-    #     cache.set(cache_key, owned_files_data, self.cache_timeout)
-
-    #     # Return the response
-    #     return Response(owned_files_data)
-
-    # def get_files_from_database(self, user):
-    #     # Implement your logic to query the database and retrieve the files owned by the user
-    #     # For example:
-    #     print("wwwalwlwl")
-    #     files = Objects.objects.prefetch_related("owner").filter(owner=user)
-    #     return files
-
-
-
-
-
-
-    def get_files_shared_by_user(self, user):
+    def get_files_shared_by_user(self, request, user):
         # Fetching files shared by user
-        files_shared_by_user = Objects.objects.filter(sharedfiles__file__owner=user.id)
-        shared_files_by_user_data = FileSerializer(files_shared_by_user, many=True).data
-        return Response(shared_files_by_user_data)
+        self.queryset = Objects.objects.filter(sharedfiles__file__owner=user.id)
+        return self.list(request)
 
-    def get_files_shared_to_user(self, user):
+    def get_files_shared_to_user(self, request, user):
         # Fetching files shared with the user
-        files_shared_with_user = Objects.objects.filter(sharedfiles__shared_with=user)
-        shared_files_data = FileSerializer(files_shared_with_user, many=True).data
-        return Response(shared_files_data)
+        self.queryset = Objects.objects.filter(sharedfiles__shared_with=user)
+        return self.list(request)
 
 
 class ExtraChecksMixin:
@@ -252,7 +208,7 @@ class ShareViewSetSender(
         user = request.user
         org_id = user.org
         user_role = user.role_priv
-        if(user_role == "org_admin"):
+        if user_role == "org_admin":
             return self.partial_update(request, **kwargs)
         elif self.check_file_ownership(request, file_id):
             return self.partial_update(request, **kwargs)
@@ -280,8 +236,8 @@ class ShareViewSetReceiver(
 
     def dispatch(self, request, *args, **kwargs):
         response = super().dispatch(request, *args, **kwargs)
-        print('Queries :',connection.queries)
-        print('Queries count :',len(connection.queries))
+        print("Queries :", connection.queries)
+        print("Queries count :", len(connection.queries))
         return response
 
     def retrieve(self, request, *args, **kwargs):
@@ -324,13 +280,17 @@ class ShareViewSetReceiver(
         self.lookup_field = "file"
 
         if not self.check_file_ownership(request, kwargs.get("file")):
-            if(user_role == "org_admin"):
-                self.queryset = Objects.objects.select_related("owner").filter(owner__org=user_org)
+            if user_role == "org_admin":
+                self.queryset = Objects.objects.select_related("owner").filter(
+                    owner__org=user_org
+                )
                 objs = get_object_or_404(self.queryset, id=kwargs.get("file"))
                 signed_url = create_signed(objs.name, 60)
                 response = Response({"id": objs.id, "signed_url": signed_url})
             else:
-                self.queryset = SharedFiles.objects.filter(shared_with__id=request.user.id)
+                self.queryset = SharedFiles.objects.filter(
+                    shared_with__id=request.user.id
+                )
                 response = self.retrieve(request, *args, **kwargs)
             if response.status_code == 200:
                 file_id = kwargs.get("file")
@@ -351,20 +311,39 @@ class ShareViewSetReceiver(
 
             return response
         else:
-            
             self.queryset = Objects.objects.filter(owner=user)
             objs = get_object_or_404(self.queryset, id=kwargs.get("file"))
             signed_url = create_signed(objs.name, 60)
             return Response({"id": objs.id, "signed_url": signed_url})
 
+
+class LoggingView(
+    ExtraChecksMixin,
+    mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.ListModelMixin,
+    GenericViewSet,
+):
+    serializer_class = AccessLogSerializer
+    authentication_classes = [SupabaseAuthBackend]
+    permission_classes = [OthersPerm]
+    
+    def dispatch(self, request, *args, **kwargs):
+        response = super().dispatch(request, *args, **kwargs)
+        print("Queries :", connection.queries)
+        print("Queries count :", len(connection.queries))
+        return response
+
+
     def event_log_handler(self, request, *args, **kwargs):
         # Only files shared with the current user
         user = request.user
         file_id = kwargs.get("file")
-        allowed_events = ["screenshot","download"]
+        allowed_events = ["screenshot", "download"]
         try:
             event = request.GET.get("event", "screenshot")
-            if(event not in allowed_events):
+            if event not in allowed_events:
                 raise ValueError
         except ValueError:
             return Response(
@@ -372,10 +351,10 @@ class ShareViewSetReceiver(
             )
         except Exception as error:
             return Response({"error": str(error)})
-        
-        return self.create_log(request,user,event,*args,**kwargs)
-        
-    def create_log(self,request,user,event,*args,**kwargs):
+
+        return self.create_log(request, user, event, *args, **kwargs)
+
+    def create_log(self, request, user, event, *args, **kwargs):
         try:
             file_id = kwargs.get("file")
             shared = SharedFiles.objects.get(
@@ -386,6 +365,7 @@ class ShareViewSetReceiver(
                 "user": user.id,
                 "username": user.username,
                 "user_email": user.email,
+                "profile_pic":user.profile_pic,
                 "file": uuid.UUID(file_id),
                 "file_name": Objects.objects.get(id=file_id).name,
                 "event": event,
@@ -412,16 +392,14 @@ class ShareViewSetReceiver(
             )
         except Exception as error:
             return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
-    
 
     # Fetch the screen shot attempts for Current user's files
     def get_logs(self, request, *args, **kwargs):
-        self.serializer_class = AccessLogSerializer
         user = request.user
         event = kwargs.get("event")
         file = kwargs.get("file")
 
-
+        # Get URL all parameters
         try:
             n = int(request.GET.get("recs", "0"))
             all_logs = int(request.GET.get("global", "1"))
@@ -431,35 +409,31 @@ class ShareViewSetReceiver(
             )
         except Exception as error:
             return Response({"error": str(error)})
- 
 
-        all_events = ["access","download","screen"]
-        if(event in all_events):
+        # List of events
+        all_events = ["access", "download", "screen"]
 
+        # User activity logging system
+        if event in all_events:
             event_filter = self.event_selector(event)
             if file:
                 return self.handle_event_by_file(request, event_filter, file, n)
             else:
-                return self.handle_event_all(request,event_filter,n)                
+                return self.handle_event_all(request, event_filter, n)
 
+        # The DUES logging  system
         elif event == "dues":
-            return self.handle_due_event_all(user, n)       
+            return self.handle_due_event_all(user, n)
 
+        # If now event is specified logs for all events:
         else:
             if file:
                 return self.handle_all_by_file(request, user, file, n)
             else:
-                return self.handle_all(request, user, n ,all_logs)
+                return self.handle_all(request, user, n, all_logs)
 
-        return Response(
-            {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
-        )
-    
     def event_selector(self, event_name):
-        event_filter = {
-            "include": {"event": []},
-            "exclude": {"event": []}
-        }
+        event_filter = {"include": {"event": []}, "exclude": {"event": []}}
 
         if event_name == "access":
             event_filter["include"]["event"].append("file_access")
@@ -469,114 +443,17 @@ class ShareViewSetReceiver(
             event_filter["include"]["event"].append("screenshot")
 
         return event_filter
-    
+
     def handle_event_by_file(self, request, event_filter, file, n):
         user = request.user
         user_org = user.org
-        try:
-            self.queryset = AccessLog.objects.select_related('org').filter(
-                file=file, org=user_org, event__in=event_filter["include"]["event"]
-            ).order_by("-timestamp")
-            self.lookup_field = "file"
-            self.queryset = self.queryset[:n] if n >= 1 else self.queryset
-            return self.list(request)
-        except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
-            return Response(
-                {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
-            )
- 
-    def handle_event_all(self,request,event_filter,n):
-        user = request.user
+
         try:
             self.queryset = (
-                AccessLog.objects.filter(
-                    org=user.org, event__in=event_filter["include"]["event"]
-                    ).order_by("-timestamp")
-            )
-            self.lookup_field = "file"
-            self.queryset = self.queryset[:n] if n >= 1 else self.queryset
-            return self.list(request)
-        except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
-            return Response(
-                {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
-            )
-    # Functions handling events
-    # def handle_screen_event_by_file(self, request, user, file, n):
-    #     try:
-    #         self.queryset = AccessLog.objects.filter(
-    #             file=file, org=user.org, event="screenshot"
-    #         ).order_by("-timestamp")
-    #         self.lookup_field = "file"
-    #         self.queryset = self.queryset[:n] if n >= 1 else self.queryset
-    #         return self.list(request)
-    #     except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
-    #         return Response(
-    #             {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
-    #         )
-                    
-    # def handle_screen_event_all(self, request, user, n):
-    #     try:
-    #         self.queryset = AccessLog.objects.filter(
-    #             org=user.org, event="screenshot"
-    #         ).order_by("-timestamp")
-    #         self.lookup_field = "file"
-    #         self.queryset = self.queryset[:n] if n >= 1 else self.queryset
-    #         return self.list(request)
-    #     except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
-    #         return Response(
-    #             {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
-    #         )
-
-    # def handle_access_event_by_file(self, request, user, file, n):
-    #     try:
-    #         self.queryset = (
-    #             AccessLog.objects.filter(file=file, org=user.org)
-    #             .exclude(event="screenshot")
-    #             .exclude(event="download")
-    #             .order_by("-timestamp")
-    #         )
-    #         self.lookup_field = "file"
-    #         self.queryset = self.queryset[:n] if n >= 1 else self.queryset
-    #         return self.list(request)
-    #     except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
-    #         return Response(
-    #             {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
-    #         )
-
-    # def handle_access_event_all(self, request, user, n):
-    #     try:
-    #         self.queryset = (
-    #             AccessLog.objects.filter(org=user.org)
-    #             .exclude(event="screenshot")
-    #             .exclude(event="download")
-    #             .order_by("-timestamp")
-    #         )
-    #         self.lookup_field = "file"
-    #         self.queryset = self.queryset[:n] if n >= 1 else self.queryset
-    #         return self.list(request)
-    #     except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
-    #         return Response(
-    #             {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
-    #         )
-        
-    # def handle_download_event_by_file(self, request, user, file, n):
-    #     try:
-    #         self.queryset = (
-    #             AccessLog.objects.filter(file=file, org=user.org,event="download")
-    #             .order_by("-timestamp")
-    #         )
-    #         self.lookup_field = "file"
-    #         self.queryset = self.queryset[:n] if n >= 1 else self.queryset
-    #         return self.list(request)
-    #     except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
-    #         return Response(
-    #             {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
-    #         )
-
-    # def handle_download_event_all(self, request, user, n):
-        try:
-            self.queryset = (
-                AccessLog.objects.filter(org=user.org,event="download")
+                AccessLog.objects.select_related("org")
+                .filter(
+                    file=file, org=user_org, event__in=event_filter["include"]["event"]
+                )
                 .order_by("-timestamp")
             )
             self.lookup_field = "file"
@@ -587,29 +464,12 @@ class ShareViewSetReceiver(
                 {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-    def handle_due_event_all(self,user, n):
-        self.serializer_class = SharedFileSerializer
+    def handle_event_all(self, request, event_filter, n):
+        user = request.user
         try:
-            self.queryset = (   
-                        SharedFiles.objects.select_related("file__owner__org")
-                        .filter(file__owner__org=user.org, state="due")
-                        .order_by("-last_modified_at")
-                            )
-            self.queryset = self.queryset[:n] if n >= 1 else self.queryset
-            fields =['file_name','last_updated','expiration_time','shared_with']
-            serializer = self.get_serializer(self.queryset, many=True,context={'fields':fields})
-            return Response(serializer.data)
-        except (SharedFiles.DoesNotExist, exceptions.ValidationError, ValueError):
-            return Response(
-                {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
-            )
-        
-    def handle_all_by_file(self, request, user, file, n):
-        user_org = user.org
-        try:
-            self.queryset = AccessLog.objects.filter(file=file, org=user_org).order_by(
-                "-timestamp"
-            )
+            self.queryset = AccessLog.objects.filter(
+                org=user.org, event__in=event_filter["include"]["event"]
+            ).order_by("-timestamp")
             self.lookup_field = "file"
             self.queryset = self.queryset[:n] if n >= 1 else self.queryset
             return self.list(request)
@@ -618,12 +478,45 @@ class ShareViewSetReceiver(
                 {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
             )
 
+    def handle_due_event_all(self, user, n):
+        self.serializer_class = SharedFileSerializer
+        try:
+            self.queryset = (
+                SharedFiles.objects.select_related("file__owner__org")
+                .filter(file__owner__org=user.org, state="due")
+                .order_by("-last_modified_at")
+            )
+            self.queryset = self.queryset[:n] if n >= 1 else self.queryset
+            fields = ["file_name", "last_updated", "expiration_time", "shared_with"]
+            serializer = self.get_serializer(
+                self.queryset, many=True, context={"fields": fields}
+            )
+            return Response(serializer.data)
+        except (SharedFiles.DoesNotExist, exceptions.ValidationError, ValueError):
+            return Response(
+                {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+    def handle_all_by_file(self, request, user, file, n):
+        # user_org = user.org
+        try:
+            self.queryset = AccessLog.objects.filter(file=file)
+            self.lookup_field = "file"
+            self.queryset = self.queryset[:n] if n >= 1 else self.queryset
+
+            return self.list(request)
+
+        except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
+            return Response(
+                {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
     def handle_all(self, request, user, n, all_logs):
         try:
-            if(all_logs==0):
+            if all_logs == 0:
                 self.queryset = AccessLog.objects.filter(user=user.id).order_by(
                     "-timestamp"
-                )                
+                )
             else:
                 self.queryset = AccessLog.objects.filter(org=user.org).order_by(
                     "-timestamp"
@@ -637,20 +530,23 @@ class ShareViewSetReceiver(
             )
 
 
-class GeoLocationView(mixins.CreateModelMixin, 
-                      mixins.ListModelMixin,
-                      mixins.UpdateModelMixin,
-                      mixins.DestroyModelMixin, 
-                      GenericViewSet):
+class GeoLocationView(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    GenericViewSet,
+):
     permission_classes = [OrgadminRequired]
     authentication_classes = [SupabaseAuthBackend]
     serializer_class = AllowedLocationSerializer
     queryset = AllowedLocations.objects.all()
     lookup_field = "id"
+
     def dispatch(self, request, *args, **kwargs):
         response = super().dispatch(request, *args, **kwargs)
-        print('Queries :',connection.queries)
-        print('Queries count :',len(connection.queries))
+        print("Queries :", connection.queries)
+        print("Queries count :", len(connection.queries))
         return response
 
     def perform_create(self, serializer):
@@ -672,16 +568,16 @@ class GeoLocationView(mixins.CreateModelMixin,
         user_org = request.user.org
         self.queryset = AllowedLocations.objects.filter(org=user_org)
         return self.list(request)
-    def update_location(self,request,**kwargs):
 
+    def update_location(self, request, **kwargs):
         user_org = request.user.org
         self.queryset = AllowedLocations.objects.filter(org=user_org)
-        return self.update(request,**kwargs)
+        return self.update(request, **kwargs)
 
-    def delete_location(self,request,**kwargs):
+    def delete_location(self, request, **kwargs):
         user_org = request.user.org
         self.queryset = AllowedLocations.objects.filter(org=user_org)
-        return self.destroy(request,**kwargs)
+        return self.destroy(request, **kwargs)
 
     def get_permissions(self):
         if self.action == "get_locations":

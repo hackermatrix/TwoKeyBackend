@@ -150,7 +150,7 @@ class AccessLogSerializer(serializers.ModelSerializer):
     # user = serializers.SerializerMethodField()
     # username = serializers.SerializerMethodField()
     # file = serializers.SerializerMethodField()
-    profile_pic = serializers.SerializerMethodField()
+    # profile_pic = serializers.SerializerMethodField()
 
     class Meta:
         model = AccessLog
