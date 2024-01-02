@@ -298,6 +298,7 @@ class ShareViewSetReceiver(
                     "user": user.id,
                     "username": user.username,
                     "user_email": user.email,
+                    "profile_pic": user.profile_pic,
                     "file": uuid.UUID(file_id),
                     "file_name": Objects.objects.get(id=file_id).name,
                     "event": "file_access",
