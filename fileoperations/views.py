@@ -67,7 +67,7 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
             return self.get_files_shared_by_user(request, user)
         else:
             return self.get_all_files(request, dept_choice, n)
-
+            
     def get_all_files(self, request, dept_choice, n, *args, **kwargs):
         if dept_choice:
             try:
@@ -94,10 +94,11 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
                 .order_by("-created_at")
             )
         self.queryset = self.queryset[:n] if n >= 1 else self.queryset
+        
         return self.list(request, *args, **kwargs)
 
     def get_files_owned_by_user(self, request, user):
-        self.queryset = Objects.objects.prefetch_related("owner").filter(owner=user)
+        self.queryset = Objects.objects.select_related("owner").select_related("owner__dept").filter(owner=user)
         return self.list(request)
 
     def get_files_shared_by_user(self, request, user):
@@ -190,7 +191,7 @@ class ShareViewSetSender(
     def get_file_info(self, request, *args, **kwargs):
         self.lookup_field = "file"
         pk = kwargs.get("file")
-        res = self.retrieve(request)
+        res = self.retrieve(request,*args,**kwargs)
         return res
 
     # Delete All share of a file
@@ -220,8 +221,6 @@ class ShareViewSetSender(
 
 
 # Below will be used at recepient's end
-
-
 class ShareViewSetReceiver(
     ExtraChecksMixin,
     mixins.RetrieveModelMixin,
@@ -293,6 +292,7 @@ class ShareViewSetReceiver(
                 )
                 response = self.retrieve(request, *args, **kwargs)
             if response.status_code == 200:
+                
                 file_id = kwargs.get("file")
                 access_log_data = {
                     "user": user.id,
@@ -308,6 +308,7 @@ class ShareViewSetReceiver(
                 access_log_serializer = AccessLogSerializer(data=access_log_data)
 
                 if access_log_serializer.is_valid():
+
                     access_log_serializer.save()
 
             return response
@@ -531,6 +532,17 @@ class LoggingView(
             )
 
 
+# class SetDepartment(APIView):
+#     def get(self,request):
+#         for file_obj in Objects.objects.select_related("owner").all().exclude(name=".emptyFolderPlaceholder"):
+#             temp = file_obj.metadata
+#             temp.update({"department":file_obj.owner.dept.name})
+#             file_obj.name = "test"
+#             file_obj.save()
+#             print(file_obj.id)
+#             break
+#         return Response("DONE!!")
+
 class GeoLocationView(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -584,3 +596,4 @@ class GeoLocationView(
         if self.action == "get_locations":
             self.permission_classes = [OthersPerm]
         return super().get_permissions()
+

@@ -44,6 +44,7 @@ class UserInfo(models.Model):
 
     is_approved = models.BooleanField(default=False)
     is_authenticated = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=False)
 
     class Meta:
         managed = True

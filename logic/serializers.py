@@ -26,7 +26,7 @@ class RoleSerializer(ModelSerializer):
 class AUserInfoSerializer(ModelSerializer):
     class Meta:
         model = UserInfo
-        fields = ['id','dept','manager','role_priv','is_approved']
+        fields = ['id','dept','manager','role_priv','is_approved','is_active']
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

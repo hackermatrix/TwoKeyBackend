@@ -250,7 +250,7 @@ class NUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSe
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        return Response(serializer.data)
+        return Response(serializer.data)        
 
 
 # Roles Viewset

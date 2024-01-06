@@ -23,6 +23,7 @@ urlpatterns = [
     # For Normal Users
     path('users/getProfileInfo/',NUserViewSet.as_view({'get':'get_current_user_info'}),name="get current user info"),
     path('users/updateProfile/',NUserViewSet.as_view({'put':'update_profile_data'}),name="Update user Profile data"),
+    path("users/setActive",NUserViewSet.as_view({'get':'set_active_status'}),name="Set User Active Status"),
     # Roles Paths
     path('role/listRoles/',RolesViewset.as_view({'get':'list_roles'}),name="list-roles"),
     path('role/updateRoles/<str:id>', RolesViewset.as_view({'put': 'update_roles'}), name='update_roles'),
