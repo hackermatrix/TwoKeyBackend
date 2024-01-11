@@ -22,3 +22,5 @@ uritemplate==4.1.1
 uuid==1.30
 gunicorn==20.1.0
 supabase==1.2.0
+django-redis==5.4.0
+redis==5.0.1
