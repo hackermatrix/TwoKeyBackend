@@ -44,7 +44,6 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -173,3 +172,18 @@ supabase_secret = config('JWT_SECRET')
 #     "http://127.0.0.1:9000",
 # ]
 CORS_ALLOW_ALL_ORIGINS = True
+# SILKY_PYTHON_PROFILER = True
+# SILKY_PYTHON_PROFILER_BINARY = True
+
+
+REDIS_USER = config("REDIS_USER")
+REDIS_PASS = config("REDIS_PASS")
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": f"redis://{REDIS_USER}:{REDIS_PASS}@redis-10763.c323.us-east-1-2.ec2.cloud.redislabs.com:10763",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}

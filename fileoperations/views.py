@@ -18,6 +18,7 @@ from backend import settings
 from backend.custom_perm_classes import SuperadminRequired, OrgadminRequired, OthersPerm
 from backend.supabase_auth import SupabaseAuthBackend
 
+
 from .models import *
 from fileoperations.serializers import (
     AccessLogSerializer,
@@ -28,7 +29,11 @@ from fileoperations.serializers import (
 )
 
 from .utils.supa import create_signed
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
 
+
+Cache_TTL = 60
 
 class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
     serializer_class = FileSerializer
@@ -36,9 +41,8 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
     permission_classes = [OthersPerm]
     queryset = Objects.objects.all()
 
-    # cache_key_prefix = 'files_owned_by_user_'
-    # cache_timeout = 60  # Cache for 60 seconds
 
+    @method_decorator(cache_page(Cache_TTL))
     def dispatch(self, request, *args, **kwargs):
         response = super().dispatch(request, *args, **kwargs)
         print("Queries :", connection.queries)
@@ -46,6 +50,7 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
         return response
 
     # List all files uploaded by all users from all departments.
+
     def get(self, request, *args, **kwargs):
         dept_choice = kwargs.get("dept")
         file_type = request.GET.get("type")
@@ -68,6 +73,7 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
         else:
             return self.get_all_files(request, dept_choice, n)
             
+    
     def get_all_files(self, request, dept_choice, n, *args, **kwargs):
         if dept_choice:
             try:
@@ -96,16 +102,16 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
         self.queryset = self.queryset[:n] if n >= 1 else self.queryset
         
         return self.list(request, *args, **kwargs)
-
+    
     def get_files_owned_by_user(self, request, user):
         self.queryset = Objects.objects.select_related("owner").select_related("owner__dept").filter(owner=user)
         return self.list(request)
-
+    
     def get_files_shared_by_user(self, request, user):
         # Fetching files shared by user
         self.queryset = Objects.objects.filter(sharedfiles__file__owner=user.id)
         return self.list(request)
-
+    
     def get_files_shared_to_user(self, request, user):
         # Fetching files shared with the user
         self.queryset = Objects.objects.filter(sharedfiles__shared_with=user)
@@ -330,7 +336,8 @@ class LoggingView(
     serializer_class = AccessLogSerializer
     authentication_classes = [SupabaseAuthBackend]
     permission_classes = [OthersPerm]
-    
+
+    @method_decorator(cache_page(Cache_TTL))
     def dispatch(self, request, *args, **kwargs):
         response = super().dispatch(request, *args, **kwargs)
         print("Queries :", connection.queries)
