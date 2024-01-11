@@ -315,9 +315,10 @@ class ShareViewSetReceiver(
 
                 if access_log_serializer.is_valid():
                     access_log_serializer.save()
-                    key = f"log_access_{file}"
+                    key1 = f"log_access_{file}"
+                    key2 = f"log_all_{file}"
                     # Deleting and setting new access cache
-                    cache.delete(key)
+                    cache.delete_many([key1,key2])
 
             return response
         else:
@@ -481,7 +482,7 @@ class LoggingView(
             response = self.list(request)
 
             # Cache the response with the custom cache key
-            cache.set(cache_key, response.data, timeout=60)
+            cache.set(cache_key, response.data, timeout=3600)
 
             return response
 
@@ -526,11 +527,20 @@ class LoggingView(
     def handle_all_by_file(self, request, user, file, n):
         # user_org = user.org
         try:
+            cache_key = f"log_all_{file}"
+
+            cache_data = cache.get(cache_key)
+            if(cache_data):
+                return cache_data
+                
             self.queryset = AccessLog.objects.filter(file=file)
             self.lookup_field = "file"
             self.queryset = self.queryset[:n] if n >= 1 else self.queryset
 
-            return self.list(request)
+            response = self.list(request)
+
+            cache.set(cache_key,response,timeout=3600)
+            return response
 
         except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
             return Response(
