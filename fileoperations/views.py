@@ -314,8 +314,10 @@ class ShareViewSetReceiver(
                 access_log_serializer = AccessLogSerializer(data=access_log_data)
 
                 if access_log_serializer.is_valid():
-
                     access_log_serializer.save()
+                    key = f"log_access_{file}"
+                    # Deleting and setting new access cache
+                    cache.delete(key)
 
             return response
         else:
@@ -337,7 +339,7 @@ class LoggingView(
     authentication_classes = [SupabaseAuthBackend]
     permission_classes = [OthersPerm]
 
-    @method_decorator(cache_page(Cache_TTL))
+    
     def dispatch(self, request, *args, **kwargs):
         response = super().dispatch(request, *args, **kwargs)
         print("Queries :", connection.queries)
@@ -458,6 +460,15 @@ class LoggingView(
         user_org = user.org
 
         try:
+            # Cache
+            cache_key = f"log_{event_filter}_{file}"
+
+            # Check if the data is already in the cache
+            cached_data = cache.get(cache_key)
+            if cached_data:
+                return Response(cached_data)
+
+            # If not in the cache, fetch the data from the database
             self.queryset = (
                 AccessLog.objects.select_related("org")
                 .filter(
@@ -467,7 +478,13 @@ class LoggingView(
             )
             self.lookup_field = "file"
             self.queryset = self.queryset[:n] if n >= 1 else self.queryset
-            return self.list(request)
+            response = self.list(request)
+
+            # Cache the response with the custom cache key
+            cache.set(cache_key, response.data, timeout=60)
+
+            return response
+
         except (AccessLog.DoesNotExist, exceptions.ValidationError, ValueError):
             return Response(
                 {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST

@@ -9,11 +9,19 @@ from rest_framework.response import Response
 from backend.settings import supabase_secret
 from authenticate.models import Users
 from rest_framework.renderers import JSONRenderer
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
+from django.core.cache import cache
 
 class SupabaseAuthBackend(BaseBackend):
     def authenticate(self, request):
         access_token = request.headers.get("Authorization")
-        print("RUNNING>>>>>....")
+        cache_key = f"authenticated_user:{access_token}"
+
+        # Check if user is in cache
+        cached_user = cache.get(cache_key)
+        if cached_user:
+            return cached_user, None
 
         if not access_token:
             return None  # No access token provided
@@ -26,11 +34,13 @@ class SupabaseAuthBackend(BaseBackend):
             sub = verified.get('sub')
 
             # Find a Django user that corresponds to the user
-            # print("BOOm")
-            user = UserInfo.objects.get(id=sub)
-            # user = Users.objects.get(id=sub)
+            user = UserInfo.objects.select_related("org").get(id=sub)
             user.is_authenticated = True
-            return (user, None)
+
+            # Cache the user for future requests
+            cache.set(cache_key, user,timeout=3600)
+
+            return user, None
 
         except jwt.exceptions.InvalidSignatureError as e:
             return None
@@ -42,6 +52,7 @@ class SupabaseAuthBackend(BaseBackend):
         # You can return a string that will be included in the "WWW-Authenticate" header.
         return 'Bearer realm="api"'
 
+    
     def get_user(self, user_id):
         try:
             return UserInfo.objects.get(id=user_id)
