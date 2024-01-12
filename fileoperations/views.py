@@ -118,6 +118,7 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
         return self.list(request)
 
 
+
 class ExtraChecksMixin:
     # Check if the user creating or deleting a share is the owner of the file
     def check_file_ownership(self, request, file_id):

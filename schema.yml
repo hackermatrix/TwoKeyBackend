@@ -160,7 +160,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SharedFilesRecepient'
+                $ref: '#/components/schemas/AccessLog'
           description: ''
   /file/getPresigned/{file}/:
     post:
@@ -221,7 +221,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SharedFilesRecepient'
+                $ref: '#/components/schemas/AccessLog'
           description: ''
   /file/shareFile/:
     post:
@@ -266,12 +266,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/SharedFile'
           description: ''
-  /file/updateLocation/{file}/:
+  /file/updateLocation/{id}/:
     put:
       operationId: file_updateLocation_update
       parameters:
       - in: path
-        name: file
+        name: id
         schema:
           type: string
           pattern: ^[\w-]*$
@@ -567,8 +567,42 @@ components:
           maxLength: 20
         is_approved:
           type: boolean
+        is_active:
+          type: boolean
       required:
       - id
+    AccessLog:
+      type: object
+      properties:
+        user:
+          type: string
+          format: uuid
+        username:
+          type: string
+          maxLength: 20
+        user_email:
+          type: string
+          format: email
+          maxLength: 254
+        profile_pic:
+          type: string
+          format: uri
+          maxLength: 200
+        file:
+          type: string
+          format: uuid
+        file_name:
+          type: string
+          maxLength: 50
+        event:
+          type: string
+        org:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - file
+      - user
     AllowedLocation:
       type: object
       properties:
@@ -622,8 +656,12 @@ components:
           type: object
           additionalProperties: {}
           nullable: true
+        profile_pic:
+          type: string
+          readOnly: true
       required:
       - id
+      - profile_pic
     GisFeatureEnum:
       type: string
       enum:
@@ -670,6 +708,8 @@ components:
           maximum: 2147483647
           minimum: -2147483648
           nullable: true
+        is_active:
+          type: boolean
         dept:
           type: string
           format: uuid
