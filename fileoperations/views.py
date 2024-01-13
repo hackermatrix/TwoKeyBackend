@@ -42,7 +42,6 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
     queryset = Objects.objects.all()
 
 
-    @method_decorator(cache_page(Cache_TTL))
     def dispatch(self, request, *args, **kwargs):
         response = super().dispatch(request, *args, **kwargs)
         print("Queries :", connection.queries)
