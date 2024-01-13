@@ -118,7 +118,6 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
         return self.list(request)
 
 
-
 class ExtraChecksMixin:
     # Check if the user creating or deleting a share is the owner of the file
     def check_file_ownership(self, request, file_id):
@@ -316,8 +315,8 @@ class ShareViewSetReceiver(
 
                 if access_log_serializer.is_valid():
                     access_log_serializer.save()
-                    key1 = f"log_access_{file}"
-                    key2 = f"log_all_{file}"
+                    key1 = f"log_access_{file_id}"
+                    key2 = f"log_all_{file_id}"
                     # Deleting and setting new access cache
                     cache.delete_many([key1,key2])
 
