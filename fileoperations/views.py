@@ -103,7 +103,7 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
         return self.list(request, *args, **kwargs)
     
     def get_files_owned_by_user(self, request, user):
-        self.queryset = Objects.objects.select_related("owner").select_related("owner__dept").filter(owner=user)
+        self.queryset = Objects.objects.select_related("owner").select_related("owner__dept").filter(bucket_id="TwoKey",owner=user)
         return self.list(request)
     
     def get_files_shared_by_user(self, request, user):
