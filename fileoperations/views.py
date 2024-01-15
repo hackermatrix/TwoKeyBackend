@@ -143,7 +143,13 @@ class ShareViewSetSender(
     authentication_classes = [SupabaseAuthBackend]
     serializer_class = SharedFileSerializer
     permission_classes = [OthersPerm]
-    queryset = SharedFiles.objects.all()
+    queryset = SharedFiles.objects.select_related("file").select_related("file__owner").all()
+
+    def dispatch(self, request, *args, **kwargs):
+        response = super().dispatch(request, *args, **kwargs)
+        print("Queries :", connection.queries)
+        print("Queries count :", len(connection.queries))
+        return response
 
     # Delete a file share if the user is the owner of the file
     def destroy(self, request, *args, **kwargs):
@@ -195,8 +201,15 @@ class ShareViewSetSender(
     #  - Shared_with list
     def get_file_info(self, request, *args, **kwargs):
         self.lookup_field = "file"
-        pk = kwargs.get("file")
+        file = kwargs.get("file")
+
+        cache_key = f"file_info_{file}"
+
+        cache_data = cache.get(cache_key)
+        if(cache_data):
+            return Response(cache_data)
         res = self.retrieve(request,*args,**kwargs)
+        cache.set(cache_key,res.data,timeout=3600*24*2)
         return res
 
     # Delete All share of a file
@@ -245,7 +258,9 @@ class ShareViewSetReceiver(
         return response
 
     def retrieve(self, request, *args, **kwargs):
+        
         instance = self.get_object()
+        print(instance.security_check)
         sec_obj = SecCheck.objects.get(shared=instance)
         if sec_obj.geo_enabled == None:
             return super().retrieve(request, *args, **kwargs)
@@ -278,10 +293,12 @@ class ShareViewSetReceiver(
     # - Adds an access log entry.
     def get_shared_file_url(self, request, *args, **kwargs):
         # Only files shared with the current user
+        
         user = request.user
         user_role = user.role_priv
         user_org = user.org
         self.lookup_field = "file"
+    
 
         if not self.check_file_ownership(request, kwargs.get("file")):
             if user_role == "org_admin":
@@ -292,10 +309,12 @@ class ShareViewSetReceiver(
                 signed_url = create_signed(objs.name, 60)
                 response = Response({"id": objs.id, "signed_url": signed_url})
             else:
+                
                 self.queryset = SharedFiles.objects.filter(
                     shared_with__id=request.user.id
                 )
                 response = self.retrieve(request, *args, **kwargs)
+
             if response.status_code == 200:
                 
                 file_id = kwargs.get("file")
