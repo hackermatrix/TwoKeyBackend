@@ -83,7 +83,7 @@ class SharedFileSerializer(serializers.ModelSerializer):
         return obj.file.updated_at
 
     def get_owner(self, obj):
-        return obj.file.owner.name
+        return obj.file.owner.name +" "+ obj.file.owner.last_name
 
     # def get_user_ids(self, emails):
     #     return list(UserInfo.objects.filter(email__in=[email.lower() for email in emails]).values_list('id', flat=True))
