@@ -533,7 +533,7 @@ class LoggingView(
                 .order_by("-last_modified_at")
             )
             self.queryset = self.queryset[:n] if n >= 1 else self.queryset
-            fields = ["file_name", "last_updated", "expiration_time", "shared_with"]
+            fields = ["file","file_name", "last_updated", "expiration_time", "shared_with"]
             serializer = self.get_serializer(
                 self.queryset, many=True, context={"fields": fields}
             )

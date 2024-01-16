@@ -7,8 +7,8 @@ key = config('SERVICE_ROLE_KEY')
 supabase: Client = create_client(url, key)
 
 
-def create_signed(filename,time_in_minutes):
-    url = supabase.storage.from_(config('BUCKET_NAME')).create_signed_url(filename,time_in_minutes)
+def create_signed(filename,time_in_seconds):
+    url = supabase.storage.from_(config('BUCKET_NAME')).create_signed_url(filename,time_in_seconds)
     return url["signedURL"]
 
 # res = supabase.storage.from_('TwoKey').list()
