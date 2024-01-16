@@ -70,7 +70,7 @@ class SharedFileSerializer(serializers.ModelSerializer):
         file_name = instance.file.name
         if('expiration_time' in validated_data.keys()):
             expiration_time = validated_data['expiration_time']
-            new_presigned_url = create_signed(file_name,expiration_time*60)
+            new_presigned_url = create_signed(file_name,expiration_time)
             validated_data['signed_url'] = new_presigned_url
             validated_data['last_modified_at'] = timezone.now()
 
