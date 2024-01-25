@@ -221,6 +221,7 @@ class AUserViewSet(
         return super().get_permissions()
 
 
+
 # User Viewset for  Normal users
 class NUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSet):
     authentication_classes = [SupabaseAuthBackend]

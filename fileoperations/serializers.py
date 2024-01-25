@@ -59,6 +59,9 @@ class SharedFileSerializer(serializers.ModelSerializer):
         security_check = validated_data.pop('security_check')
         file_name = validated_data['file'].name
         expiration_time = validated_data['expiration_time']
+        # Setting the state of the share to active or due 
+        state = "active" if (int(expiration_time)>259200) else "due"
+        validated_data["state"] = state
         signed_url = supabase.storage.from_(self.BUCKET_NAME).create_signed_url(file_name, expiration_time)['signedURL']
         validated_data['signed_url'] = signed_url
 

@@ -174,6 +174,7 @@ class ShareViewSetSender(
             return Response(
                 {"error": "file should be a list"}, status=status.HTTP_400_BAD_REQUEST
             )
+
         for file_id in file_ids:
             if self.check_file_ownership(request, file_id):
                 request.data.pop("file")

@@ -41,6 +41,15 @@ class Objects(models.Model):
         db_table = 'storage"."objects'
         unique_together = (('bucket', 'name'),)
 
+class File_Info(models.Model):
+    id = models.UUIDField(primary_key=True,default=uuid4)
+    file = models.ForeignKey(Objects,on_delete=models.CASCADE)
+    org = models.ForeignKey(Organizations,on_delete=models.CASCADE)
+    depts = models.ManyToManyField(Departments)
+
+    class Meta:
+        db_table = "file_info"
+
 
 
 # managed
