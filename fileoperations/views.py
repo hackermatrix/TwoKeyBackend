@@ -353,7 +353,7 @@ class ShareViewSetReceiver(
             return response
         else:
             self.queryset = Objects.objects.filter(owner=user)
-            objs = get_object_or_404(self.queryset, id=kwargs.get("file"),shared_with__id=user)
+            objs = get_object_or_404(self.queryset, id=kwargs.get("file"))
             signed_url = create_signed(objs.name, 60)
             return Response({"id": objs.id, "signed_url": signed_url})
 
