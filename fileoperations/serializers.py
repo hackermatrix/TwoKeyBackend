@@ -103,8 +103,10 @@ class SharedFileSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data.pop("security_check")
+        print(data)
 
-        serializer = SecCheckSerializer(SecCheck.objects.get(shared__file=data['file']))
+        serializer = SecCheckSerializer(SecCheck.objects.get(shared = instance))
+        print(serializer.data)
         data["security_check"] = serializer.data
 
         users = instance.shared_with.all()

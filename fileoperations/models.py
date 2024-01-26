@@ -41,14 +41,14 @@ class Objects(models.Model):
         db_table = 'storage"."objects'
         unique_together = (('bucket', 'name'),)
 
-class File_Info(models.Model):
-    id = models.UUIDField(primary_key=True,default=uuid4)
-    file = models.ForeignKey(Objects,on_delete=models.CASCADE)
-    org = models.ForeignKey(Organizations,on_delete=models.CASCADE)
-    depts = models.ManyToManyField(Departments)
+# class File_Info(models.Model):
+#     id = models.UUIDField(primary_key=True,default=uuid4)
+#     file = models.O(Objects,on_delete=models.CASCADE)
+#     # org = models.ForeignKey(Organizations,on_delete=models.DO_NOTHING)
+#     # depts = models.ManyToManyField(Departments)
 
-    class Meta:
-        db_table = "file_info"
+#     class Meta:
+#         db_table = "file_info"
 
 
 
@@ -56,7 +56,7 @@ class File_Info(models.Model):
 
 class SharedFiles(models.Model):
     id = models.UUIDField(primary_key=True,default=uuid4)
-    file = models.OneToOneField(Objects, on_delete=models.CASCADE)
+    file = models.ForeignKey(Objects, on_delete=models.CASCADE)
     # file_owner = models.ForeignKey(UserInfo, on_delete=models.CASCADE)
     shared_with = models.ManyToManyField(UserInfo, related_name='shared_files')
     expiration_time = models.BigIntegerField()

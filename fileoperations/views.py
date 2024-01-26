@@ -145,11 +145,11 @@ class ShareViewSetSender(
     permission_classes = [OthersPerm]
     queryset = SharedFiles.objects.select_related("file").select_related("file__owner").all()
 
-    def dispatch(self, request, *args, **kwargs):
-        response = super().dispatch(request, *args, **kwargs)
-        print("Queries :", connection.queries)
-        print("Queries count :", len(connection.queries))
-        return response
+    # def dispatch(self, request, *args, **kwargs):
+    #     response = super().dispatch(request, *args, **kwargs)
+    #     print("Queries :", connection.queries)
+    #     print("Queries count :", len(connection.queries))
+    #     return response
 
     # Delete a file share if the user is the owner of the file
     def destroy(self, request, *args, **kwargs):
@@ -179,6 +179,10 @@ class ShareViewSetSender(
             if self.check_file_ownership(request, file_id):
                 request.data.pop("file")
                 request.data["file"] = file_id
+                shared_with = request.data["shared_with"]
+                for id in shared_with:
+                    if(SharedFiles.objects.filter(file=file_id,shared_with__id=id)):
+                        return Response({"error":f"File already shared with {id}"},status=status.HTTP_406_NOT_ACCEPTABLE)
                 serializer = self.get_serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 self.perform_create(serializer)
@@ -201,6 +205,7 @@ class ShareViewSetSender(
     #  - file_id
     #  - Shared_with list
     def get_file_info(self, request, *args, **kwargs):
+        user = request.user
         self.lookup_field = "file"
         file = kwargs.get("file")
 
@@ -209,6 +214,7 @@ class ShareViewSetSender(
         cache_data = cache.get(cache_key)
         if(cache_data):
             return Response(cache_data)
+        self.queryset = SharedFiles.objects.filter(shared_with__id=user.id)
         res = self.retrieve(request,*args,**kwargs)
         cache.set(cache_key,res.data,timeout=3600*24*2)
         return res
@@ -252,13 +258,15 @@ class ShareViewSetReceiver(
     authentication_classes = [SupabaseAuthBackend]
     permission_classes = [OthersPerm]
 
-    def dispatch(self, request, *args, **kwargs):
-        response = super().dispatch(request, *args, **kwargs)
-        print("Queries :", connection.queries)
-        print("Queries count :", len(connection.queries))
-        return response
+    # def dispatch(self, request, *args, **kwargs):
+    #     response = super().dispatch(request, *args, **kwargs)
+    #     print("Queries :", connection.queries)
+    #     print("Queries count :", len(connection.queries))
+    #     return response
 
     def retrieve(self, request, *args, **kwargs):
+        # user = request.user
+        # file_id = kwargs.get("file")
         
         instance = self.get_object()
         print(instance.security_check)
@@ -306,16 +314,16 @@ class ShareViewSetReceiver(
                 self.queryset = Objects.objects.select_related("owner").filter(
                     owner__org=user_org
                 )
-                objs = get_object_or_404(self.queryset, id=kwargs.get("file"))
+                objs = get_object_or_404(self.queryset, id=kwargs.get("file"),shared_with__id=user)
                 signed_url = create_signed(objs.name, 60)
                 response = Response({"id": objs.id, "signed_url": signed_url})
             else:
-                
                 self.queryset = SharedFiles.objects.filter(
                     shared_with__id=request.user.id
                 )
                 response = self.retrieve(request, *args, **kwargs)
 
+            
             if response.status_code == 200:
                 
                 file_id = kwargs.get("file")
@@ -332,6 +340,8 @@ class ShareViewSetReceiver(
 
                 access_log_serializer = AccessLogSerializer(data=access_log_data)
 
+                print(access_log_data) 
+                print(access_log_serializer.error_messages)
                 if access_log_serializer.is_valid():
                     access_log_serializer.save()
                     key1 = f"log_access_{file_id}"
@@ -339,11 +349,11 @@ class ShareViewSetReceiver(
                     # Deleting and setting new access cache
                     cache.delete_many([key1,key2])
 
-
+            
             return response
         else:
             self.queryset = Objects.objects.filter(owner=user)
-            objs = get_object_or_404(self.queryset, id=kwargs.get("file"))
+            objs = get_object_or_404(self.queryset, id=kwargs.get("file"),shared_with__id=user)
             signed_url = create_signed(objs.name, 60)
             return Response({"id": objs.id, "signed_url": signed_url})
 
