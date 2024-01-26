@@ -83,20 +83,20 @@ AUTHENTICATION_BACKENDS = [
 # HIDE_THIS
 DATABASES = {
     'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        #'ENGINE': 'django.db.backends.sqlite3',
+        # 'ENGINE': 'django.db.backends.postgresql',
+        "ENGINE":'django.contrib.gis.db.backends.postgis',
         'NAME': 'postgres',
         'USER': config("SUPA_USER"),
         'PASSWORD': config("SUPA_PASS"),
         'HOST': config("SUPA_HOST"),
-        'PORT': '54322',
-        'OPTIONS': {
-            # Remove or comment out the SSL-related options
-            # 'sslmode': 'require',
-            # 'sslrootcert': 'path/to/ca-certificate.crt',
-        },
+        'PORT': '5432',
+        'OPTIONS' : {
+        'options': '-c search_path=public'
+},
+
     }
 }
-
 
 # DATABASES = {
 #     'default': {
@@ -176,14 +176,14 @@ CORS_ALLOW_ALL_ORIGINS = True
 # SILKY_PYTHON_PROFILER_BINARY = True
 
 
-# REDIS_USER = config("REDIS_USER")
-# REDIS_PASS = config("REDIS_PASS")
-# CACHES = {
-#     "default": {
-#         "BACKEND": "django_redis.cache.RedisCache",
-#         "LOCATION": f"redis://{REDIS_USER}:{REDIS_PASS}@redis-10763.c323.us-east-1-2.ec2.cloud.redislabs.com:10763",
-#         "OPTIONS": {
-#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-#         }
-#     }
-# }
+REDIS_USER = config("REDIS_USER")
+REDIS_PASS = config("REDIS_PASS")
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": f"redis://{REDIS_USER}:{REDIS_PASS}@redis-10763.c323.us-east-1-2.ec2.cloud.redislabs.com:10763",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
