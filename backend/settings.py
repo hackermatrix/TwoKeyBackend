@@ -176,14 +176,14 @@ CORS_ALLOW_ALL_ORIGINS = True
 # SILKY_PYTHON_PROFILER_BINARY = True
 
 
-REDIS_USER = config("REDIS_USER")
-REDIS_PASS = config("REDIS_PASS")
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": f"redis://{REDIS_USER}:{REDIS_PASS}@redis-10763.c323.us-east-1-2.ec2.cloud.redislabs.com:10763",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    }
-}
+# REDIS_USER = config("REDIS_USER")
+# REDIS_PASS = config("REDIS_PASS")
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django_redis.cache.RedisCache",
+#         "LOCATION": f"redis://{REDIS_USER}:{REDIS_PASS}@redis-10763.c323.us-east-1-2.ec2.cloud.redislabs.com:10763",
+#         "OPTIONS": {
+#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+#         }
+#     }
+# }

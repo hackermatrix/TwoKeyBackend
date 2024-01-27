@@ -512,7 +512,7 @@ class LoggingView(
             response = self.list(request)
 
             # Cache the response with the custom cache key
-            cache.set(cache_key, response.data, timeout=60)
+            cache.set(cache_key, response.data, timeout=3600*24)
 
             return response
 
@@ -569,7 +569,7 @@ class LoggingView(
             self.queryset = self.queryset[:n] if n >= 1 else self.queryset
 
             response = self.list(request)
-            cache.set(cache_key,response.data,timeout=3600)
+            cache.set(cache_key,response.data,timeout=3600*24)
             
             return response
 
