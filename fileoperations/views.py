@@ -28,6 +28,7 @@ from fileoperations.serializers import (
     FileMetaSerializer,
     SharedFileSerializer,
     SharedFilesRecepient,
+    AddDepartmentsSerializer,
 )
 
 from .utils.supa import create_signed
@@ -84,26 +85,16 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
                 return Response(
                     {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
                 )
-                
-
-            # self.queryset = (
-            #     Objects.objects.prefetch_related("owner")
-            #     .filter(
-            #         owner__org=request.user.org, owner__dept=dept.id, bucket_id="TwoKey"
-            #     )
-            #     .exclude(name=".emptyFolderPlaceholder")
-            #     .order_by("-created_at")
-            # )
-
+            
             self.queryset = (
-                File_Info.objects.prefetch_related("file")
-                .filter(
-                    depts__id = dept.id,org=request.user.org
-                )
+                Objects.objects.select_related("owner")
+                .prefetch_related(Prefetch('file_info', queryset=File_Info.objects.prefetch_related('depts')))
+                .filter(owner__org=request.user.org, bucket_id="TwoKey",file_info__depts=dept.id)
+                .exclude(name=".emptyFolderPlaceholder")
+                .order_by("-created_at")
             )
 
-            print(self.queryset)
-            # return Response("HEOOL")
+
         else:
             # print(FileSerializer(Objects.objects.prefetch_related().exclude(name=".emptyFolderPlaceholder"),many=True).data)
             # k = FileMetaSerializer(File_Info.objects.prefetch_related("depts").all(),many=True).data
@@ -132,6 +123,31 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
         # Fetching files shared with the user
         self.queryset = Objects.objects.filter(sharedfiles__shared_with=user)
         return self.list(request)
+
+class AddDepartmentsToFileView(APIView):    
+    permission_classes = [OthersPerm]
+    def post(self, request, file):
+           file_info = get_object_or_404(File_Info, file=file)
+           serializer = AddDepartmentsSerializer(data=request.data)
+
+           if serializer.is_valid():
+               department_ids = serializer.validated_data.get('department_ids', [])
+
+               # Validate that each department ID exists
+               for department_id in department_ids:
+                   get_object_or_404(Departments, id=department_id)
+
+               # Check if departments are already associated and add only unique departments
+               unique_department_ids = set(department_ids) - set(file_info.depts.values_list('id', flat=True))
+
+               # Add the unique departments to the File_Info instance
+               file_info.depts.add(*unique_department_ids)
+               file_info.save()
+
+               return Response({'detail': 'Departments added successfully'}, status=status.HTTP_200_OK)
+
+           return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class ExtraChecksMixin:

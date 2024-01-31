@@ -14,6 +14,16 @@ from logic.serializers import DepartmentSerializer
 
 
 
+
+class AddDepartmentsSerializer(serializers.Serializer):
+    department_ids = serializers.ListField(child=serializers.UUIDField())
+    class Meta:
+        model = File_Info
+        fields = ['department_ids']
+
+
+
+
 class FileMetaSerializer(ModelSerializer):
     depts = DepartmentSerializer(many=True)
 
