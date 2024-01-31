@@ -340,9 +340,10 @@ class ShareViewSetReceiver(
 
                 access_log_serializer = AccessLogSerializer(data=access_log_data)
 
-                print(access_log_data) 
-                print(access_log_serializer.error_messages)
+                # print(access_log_data) 
+                print(access_log_data)
                 if access_log_serializer.is_valid():
+                    print("HELLO")
                     access_log_serializer.save()
                     key1 = f"log_access_{file_id}"
                     key2 = f"log_all_{file_id}"

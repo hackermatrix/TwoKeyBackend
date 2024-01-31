@@ -94,7 +94,7 @@ class AccessLog(models.Model):
     user = models.UUIDField()
     username = models.CharField(max_length=20,default="")
     user_email = models.EmailField(default="")
-    profile_pic = models.URLField(default="")
+    profile_pic = models.CharField(default="")
     file = models.UUIDField()
     file_name = models.CharField(max_length=50,default="")
     event = models.CharField(default="")
