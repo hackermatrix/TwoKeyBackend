@@ -340,7 +340,6 @@ class ShareViewSetReceiver(
 
                 access_log_serializer = AccessLogSerializer(data=access_log_data)
 
-                # print(access_log_data) 
                 print(access_log_data)
                 if access_log_serializer.is_valid():
                     print("HELLO")

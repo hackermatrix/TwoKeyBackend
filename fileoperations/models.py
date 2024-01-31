@@ -92,11 +92,11 @@ class SecCheck(models.Model):
 class AccessLog(models.Model):
     id = models.UUIDField(primary_key=True,default=uuid4)
     user = models.UUIDField()
-    username = models.CharField(max_length=20,default="")
+    username = models.CharField(max_length=100,default="")
     user_email = models.EmailField(default="")
     profile_pic = models.CharField(default="")
     file = models.UUIDField()
-    file_name = models.CharField(max_length=50,default="")
+    file_name = models.CharField(max_length=500,default="")
     event = models.CharField(default="")
     org = models.ForeignKey(Organizations,on_delete=models.CASCADE,default=None,null=True)
     timestamp = models.DateTimeField(default=timezone.now)
