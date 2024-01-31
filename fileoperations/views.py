@@ -6,6 +6,7 @@ from django.contrib.gis.measure import Distance
 from decouple import config
 from django.db import connection, reset_queries
 from django.shortcuts import get_object_or_404
+from django.db.models import Prefetch
 
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.views import APIView
@@ -24,6 +25,7 @@ from fileoperations.serializers import (
     AccessLogSerializer,
     AllowedLocationSerializer,
     FileSerializer,
+    FileMetaSerializer,
     SharedFileSerializer,
     SharedFilesRecepient,
 )
@@ -42,11 +44,11 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
     queryset = Objects.objects.all()
 
 
-    def dispatch(self, request, *args, **kwargs):
-        response = super().dispatch(request, *args, **kwargs)
-        print("Queries :", connection.queries)
-        print("Queries count :", len(connection.queries))
-        return response
+    # def dispatch(self, request, *args, **kwargs):
+    #     response = super().dispatch(request, *args, **kwargs)
+    #     print("Queries :", connection.queries)
+    #     print("Queries count :", len(connection.queries))
+    #     return response
 
     # List all files uploaded by all users from all departments.
 
@@ -76,24 +78,39 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
     def get_all_files(self, request, dept_choice, n, *args, **kwargs):
         if dept_choice:
             try:
-                res = Departments.objects.get(name=dept_choice)
+                dept = Departments.objects.get(name=dept_choice)
 
             except (Departments.DoesNotExist, ValueError, exceptions.ValidationError):
                 return Response(
                     {"error": "invalid request"}, status=status.HTTP_400_BAD_REQUEST
                 )
+                
+
+            # self.queryset = (
+            #     Objects.objects.prefetch_related("owner")
+            #     .filter(
+            #         owner__org=request.user.org, owner__dept=dept.id, bucket_id="TwoKey"
+            #     )
+            #     .exclude(name=".emptyFolderPlaceholder")
+            #     .order_by("-created_at")
+            # )
 
             self.queryset = (
-                Objects.objects.prefetch_related("owner")
+                File_Info.objects.prefetch_related("file")
                 .filter(
-                    owner__org=request.user.org, owner__dept=res.id, bucket_id="TwoKey"
+                    depts__id = dept.id,org=request.user.org
                 )
-                .exclude(name=".emptyFolderPlaceholder")
-                .order_by("-created_at")
             )
+
+            print(self.queryset)
+            # return Response("HEOOL")
         else:
+            # print(FileSerializer(Objects.objects.prefetch_related().exclude(name=".emptyFolderPlaceholder"),many=True).data)
+            # k = FileMetaSerializer(File_Info.objects.prefetch_related("depts").all(),many=True).data
+            # print(k)
             self.queryset = (
                 Objects.objects.select_related("owner")
+                .prefetch_related(Prefetch('file_info', queryset=File_Info.objects.prefetch_related('depts')))
                 .filter(owner__org=request.user.org, bucket_id="TwoKey")
                 .exclude(name=".emptyFolderPlaceholder")
                 .order_by("-created_at")

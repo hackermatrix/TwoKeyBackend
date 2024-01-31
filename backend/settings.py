@@ -90,7 +90,7 @@ DATABASES = {
         'USER': config("SUPA_USER"),
         'PASSWORD': config("SUPA_PASS"),
         'HOST': config("SUPA_HOST"),
-        'PORT': '5432',
+        'PORT': '54322',
         'OPTIONS' : {
         'options': '-c search_path=public'
 },
