@@ -1,3 +1,4 @@
 .env
 .vercel
 .env_prod
+__pycache__
