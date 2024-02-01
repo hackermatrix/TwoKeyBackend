@@ -8,18 +8,37 @@ from .utils.supa import supabase , create_signed
 from logic.models import UserInfo
 from decouple import config
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
-from .models import AccessLog, AllowedLocations, Objects, SecCheck, SharedFiles
+from .models import AccessLog, AllowedLocations, Objects, SecCheck, SharedFiles, File_Info
+from logic.serializers import DepartmentSerializer
 
 
 
+
+
+class AddDepartmentsSerializer(serializers.Serializer):
+    department_ids = serializers.ListField(child=serializers.UUIDField())
+    class Meta:
+        model = File_Info
+        fields = ['department_ids']
+
+
+
+
+class FileMetaSerializer(ModelSerializer):
+    depts = DepartmentSerializer(many=True)
+
+    class Meta:
+        model = File_Info
+        fields = ['depts']
 
 class FileSerializer(ModelSerializer):
     metadata =serializers.JSONField
     profile_pic = serializers.SerializerMethodField()
+    file_info = FileMetaSerializer(many=True, read_only=True)
         
     class Meta:
         model = Objects
-        fields = ['id','name','metadata',"profile_pic"]
+        fields = ['id','name','metadata','file_info',"profile_pic"]
     def to_representation(self, instance):
         data = super().to_representation(instance)
         # print(instance.owner.email)
