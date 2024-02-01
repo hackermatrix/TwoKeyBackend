@@ -41,14 +41,15 @@ class Objects(models.Model):
         db_table = 'storage"."objects'
         unique_together = (('bucket', 'name'),)
 
-# class File_Info(models.Model):
-#     id = models.UUIDField(primary_key=True,default=uuid4)
-#     file = models.O(Objects,on_delete=models.CASCADE)
-#     # org = models.ForeignKey(Organizations,on_delete=models.DO_NOTHING)
-#     # depts = models.ManyToManyField(Departments)
+class File_Info(models.Model):
+    id = models.UUIDField(primary_key=True,default=uuid4)
+    file = models.ForeignKey(Objects,on_delete=models.CASCADE,related_name="file_info")
+    org = models.ForeignKey(Organizations,on_delete=models.DO_NOTHING)
+    depts = models.ManyToManyField(Departments)
 
-#     class Meta:
-#         db_table = "file_info"
+    class Meta:
+        db_table = "file_info"
+
 
 
 
