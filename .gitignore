@@ -1,4 +1,5 @@
 .env
 .vercel
 .env_prod
-__pycache__
+fileoperations/__pycache__
+fileoperations/migrations
