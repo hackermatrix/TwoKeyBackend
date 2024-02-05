@@ -3,3 +3,9 @@
 .env_prod
 fileoperations/__pycache__
 fileoperations/migrations
+logic/__pycache__
+logic/migrations
+authenticate/__pycache__
+authenticate/migrations
+backend/__pycache__
+backend/migrations
