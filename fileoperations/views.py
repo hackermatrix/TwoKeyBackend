@@ -203,16 +203,20 @@ class ShareViewSetSender(
     def share_file(self, request):
         file_ids = request.data.get("file", [])
         shared_files = []
+        shared_with = request.data["shared_with"]
         if type(file_ids) != list:
             return Response(
                 {"error": "file should be a list"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        if(len(shared_with)==0):
+            return Response(
+                {"error": " This field 'shared_with' required"}, status=status.HTTP_400_BAD_REQUEST
             )
 
         for file_id in file_ids:
             if self.check_file_ownership(request, file_id):
                 request.data.pop("file")
                 request.data["file"] = file_id
-                shared_with = request.data["shared_with"]
                 for id in shared_with:
                     if(SharedFiles.objects.filter(file=file_id,shared_with__id=id)):
                         return Response({"error":f"File already shared with {id}"},status=status.HTTP_406_NOT_ACCEPTABLE)
