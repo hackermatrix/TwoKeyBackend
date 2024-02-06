@@ -45,11 +45,11 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
     queryset = Objects.objects.all()
 
 
-    # def dispatch(self, request, *args, **kwargs):
-    #     response = super().dispatch(request, *args, **kwargs)
-    #     print("Queries :", connection.queries)
-    #     print("Queries count :", len(connection.queries))
-    #     return response
+    def dispatch(self, request, *args, **kwargs):
+        response = super().dispatch(request, *args, **kwargs)
+        print("Queries :", connection.queries)
+        print("Queries count :", len(connection.queries))
+        return response
 
     # List all files uploaded by all users from all departments.
 
