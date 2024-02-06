@@ -121,7 +121,7 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
     
     def get_files_shared_to_user(self, request, user):
         # Fetching files shared with the user
-        self.queryset = Objects.prefetch_related(Prefetch('file_info', queryset=File_Info.objects.prefetch_related('depts'))).objects.filter(sharedfiles__shared_with=user)
+        self.queryset = Objects.objects.prefetch_related(Prefetch('file_info', queryset=File_Info.objects.prefetch_related('depts'))).filter(sharedfiles__shared_with=user)
         return self.list(request)
 
 class AddDepartmentsToFileView(APIView):    
