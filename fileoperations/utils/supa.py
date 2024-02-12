@@ -1,9 +1,17 @@
-
+import os
 from supabase import create_client, Client
 from decouple import config
+from backend.settings import SUPA_CLI_URL
+from backend.settings import SUPA_SERVICE_ROLE_KEY
 
-url = config('SUPA_URL')
-key = config('SERVICE_ROLE_KEY')
+# url = config('SUPA_URL')
+# key = config('SERVICE_ROLE_KEY')
+# SUPA_CLI_URL= os.environ.get("SUPA_URL")
+# SUPA_SERVICE_ROLE_KEY= os.environ.get("SERVICE_ROLE_KEY")
+
+url = SUPA_CLI_URL
+key = SUPA_SERVICE_ROLE_KEY
+
 supabase: Client = create_client(url, key)
 
 

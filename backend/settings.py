@@ -14,8 +14,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-*mk17tssjq67b+&mc-b7go@2(m=!yi0deb2@!r90fek-%q3wgq'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+#ENVIRONMENT VARIABLES:
+SUPA_CLI_URL= config("SUPA_URL")
+SUPA_SERVICE_ROLE_KEY= config("SERVICE_ROLE_KEY")
+SUPA_USER= config("SUPA_USER")
+SUPA_PASS= config("SUPA_PASS")
+SUPA_HOST= config("SUPA_HOST")
+SUPA_PORT= config("SUPA_PORT")
+supabase_secret = config('JWT_SECRET')
+DEBUG = False
 
 ALLOWED_HOSTS = ['twokeybackend.onrender.com','localhost']
 
@@ -87,10 +94,10 @@ DATABASES = {
         # 'ENGINE': 'django.db.backends.postgresql',
         "ENGINE":'django.contrib.gis.db.backends.postgis',
         'NAME': 'postgres',
-        'USER': config("SUPA_USER"),
-        'PASSWORD': config("SUPA_PASS"),
-        'HOST': config("SUPA_HOST"),
-        'PORT': config("SUPA_PORT"),
+        'USER': SUPA_USER,
+        'PASSWORD': SUPA_PASS,
+        'HOST': SUPA_HOST,
+        'PORT': SUPA_PORT,
         'OPTIONS' : {
         'options': '-c search_path=public'
 },
@@ -164,7 +171,7 @@ SPECTACULAR_SETTINGS = {
     # OTHER SETTINGS
 }
 
-supabase_secret = config('JWT_SECRET')
+
 # CORS_ALLOWED_ORIGINS = [
 #     "https://example.com",
 #     "https://sub.example.com",
