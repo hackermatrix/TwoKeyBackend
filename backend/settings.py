@@ -15,16 +15,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-*mk17tssjq67b+&mc-b7go@2(m=!yi0deb2@!r90fek-%q3wgq'
 
 #ENVIRONMENT VARIABLES:
-SUPA_CLI_URL= config("SUPA_URL")
-SUPA_SERVICE_ROLE_KEY= config("SERVICE_ROLE_KEY")
-SUPA_USER= config("SUPA_USER")
-SUPA_PASS= config("SUPA_PASS")
-SUPA_HOST= config("SUPA_HOST")
-SUPA_PORT= config("SUPA_PORT")
-supabase_secret = config('JWT_SECRET')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS').split(' ')
+SUPA_CLI_URL= os.environ.get("SUPA_URL")
+SUPA_SERVICE_ROLE_KEY= os.environ.get("SERVICE_ROLE_KEY")
+SUPA_USER= os.environ.get("SUPA_USER")
+SUPA_PASS= os.environ.get("SUPA_PASS")
+SUPA_HOST= os.environ.get("SUPA_HOST")
+SUPA_PORT= os.environ.get("SUPA_PORT")
+supabase_secret = os.environ.get('JWT_SECRET')
 DEBUG = False
 
-ALLOWED_HOSTS = ['twokeybackend.onrender.com','localhost']
 
 APPEND_SLASH = False
 # Application definition
