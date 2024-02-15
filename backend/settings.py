@@ -15,7 +15,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-*mk17tssjq67b+&mc-b7go@2(m=!yi0deb2@!r90fek-%q3wgq'
 
 #ENVIRONMENT VARIABLES:
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS').split(' ')
+ALLOWED_HOSTS = ['twokeybackend.onrender.com','localhost']
 SUPA_CLI_URL= os.environ.get("SUPA_URL")
 SUPA_SERVICE_ROLE_KEY= os.environ.get("SERVICE_ROLE_KEY")
 SUPA_USER= os.environ.get("SUPA_USER")
