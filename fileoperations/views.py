@@ -125,7 +125,7 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
         return self.list(request)
 
 class AddDepartmentsToFileView(APIView):    
-    permission_classes = [OthersPerm]
+    permission_classes = [OrgadminRequired]
     def post(self, request, file):
            file_info = get_object_or_404(File_Info, file=file)
            serializer = AddDepartmentsSerializer(data=request.data)
