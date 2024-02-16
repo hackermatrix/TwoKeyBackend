@@ -124,7 +124,8 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
         self.queryset = Objects.objects.prefetch_related(Prefetch('file_info', queryset=File_Info.objects.prefetch_related('depts'))).filter(sharedfiles__shared_with=user)
         return self.list(request)
 
-class AddDepartmentsToFileView(APIView):    
+class AddDepartmentsToFileView(generics.GenericAPIView):    
+    authentication_classes = [SupabaseAuthBackend]
     permission_classes = [OrgadminRequired]
     def post(self, request, file):
            file_info = get_object_or_404(File_Info, file=file)
