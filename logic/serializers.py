@@ -14,7 +14,7 @@ class DepartmentSerializer(ModelSerializer):
 
     class Meta:
         model =  Departments
-        fields = ['id','name']
+        fields = ['id','name','metadata']
 
 class RoleSerializer(ModelSerializer):
     class Meta:

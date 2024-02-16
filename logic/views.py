@@ -47,12 +47,13 @@ class OrgView(mixins.ListModelMixin, mixins.CreateModelMixin, GenericViewSet):
 
 
 # Department ViewSet
-class DeptView(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin , GenericViewSet):
+class DeptView(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin ,mixins.UpdateModelMixin, GenericViewSet):
     # Default Permission Class
     permission_classes = [OrgadminRequired]
     queryset = Departments.objects.all()
     authentication_classes = [SupabaseAuthBackend]
     serializer_class = DepartmentSerializer
+    lookup_field = "id"
 
     # Access to all Authenticated Users.
     def list_depts(self, request, *args, **kwargs):
@@ -79,6 +80,9 @@ class DeptView(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.DestroyMod
         self.lookup_field = "id"
         self.queryset = Departments.objects.filter(org = user.org_id)
         return self.destroy(request,**kwargs)
+
+    def update_depts(self,request,*args,**kwargs):
+        return self.partial_update(request, *args, **kwargs)
 
     def get_permissions(self):
         if self.action == "list_depts":

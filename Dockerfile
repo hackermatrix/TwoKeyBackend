@@ -37,7 +37,7 @@ RUN rm -rf auth/__pycache__
 
 # Expose port 8000 for Django application
 EXPOSE 8000
-RUN chmod +x ./entrypoint.sh
+RUN chmod +x entrypoint.sh
 # # Command to run your application
 # CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 ENTRYPOINT [ "./entrypoint.sh" ]

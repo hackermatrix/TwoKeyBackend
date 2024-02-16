@@ -26,6 +26,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/Department'
           description: ''
+  /dept/deleteDept/{id}/:
+    delete:
+      operationId: dept_deleteDept_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[\w-]*$
+        required: true
+      tags:
+      - dept
+      responses:
+        '204':
+          description: No response body
   /dept/listDepts/:
     get:
       operationId: dept_listDepts_retrieve
@@ -38,6 +53,54 @@ paths:
               schema:
                 $ref: '#/components/schemas/Department'
           description: ''
+  /dept/updateDept/{id}/:
+    put:
+      operationId: dept_updateDept_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[\w-]*$
+        required: true
+      tags:
+      - dept
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Department'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Department'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Department'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+          description: ''
+  /file/addDepartment/{file}/:
+    post:
+      operationId: file_addDepartment_create
+      parameters:
+      - in: path
+        name: file
+        schema:
+          type: string
+          pattern: ^[\w-]*$
+        required: true
+      tags:
+      - file
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
   /file/createLocation/:
     post:
       operationId: file_createLocation_create
@@ -413,21 +476,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Role'
           description: ''
-  /users/deleteDept/{id}/:
-    delete:
-      operationId: users_deleteDept_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          pattern: ^[\w-]*$
-        required: true
-      tags:
-      - users
-      responses:
-        '204':
-          description: No response body
   /users/deleteUser/{id}/:
     delete:
       operationId: users_deleteUser_destroy
@@ -579,21 +627,19 @@ components:
           format: uuid
         username:
           type: string
-          maxLength: 20
+          maxLength: 100
         user_email:
           type: string
           format: email
           maxLength: 254
         profile_pic:
           type: string
-          format: uri
-          maxLength: 200
         file:
           type: string
           format: uuid
         file_name:
           type: string
-          maxLength: 50
+          maxLength: 500
         event:
           type: string
         org:
@@ -643,6 +689,10 @@ components:
         name:
           type: string
           nullable: true
+        metadata:
+          type: object
+          additionalProperties: {}
+          nullable: true
     File:
       type: object
       properties:
@@ -656,12 +706,27 @@ components:
           type: object
           additionalProperties: {}
           nullable: true
+        file_info:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileMeta'
+          readOnly: true
         profile_pic:
           type: string
           readOnly: true
       required:
+      - file_info
       - id
       - profile_pic
+    FileMeta:
+      type: object
+      properties:
+        depts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Department'
+      required:
+      - depts
     GisFeatureEnum:
       type: string
       enum:
@@ -796,3 +861,11 @@ components:
           type: string
           format: uri
           maxLength: 200
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

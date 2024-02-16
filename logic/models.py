@@ -16,6 +16,7 @@ class Departments(models.Model):
     id = models.UUIDField(primary_key=True,default=uuid.uuid4)
     name = models.CharField(blank=True, null=True)
     org = models.ForeignKey(Organizations,on_delete=models.CASCADE,default=None)
+    metadata = models.JSONField(blank=True, null=True, default=dict)
 
     class Meta:
         managed = True
