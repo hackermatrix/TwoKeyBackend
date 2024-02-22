@@ -22,6 +22,77 @@ from fileoperations.serializers import AccessLogSerializer, FileSerializer, Shar
 from logic.models import *
 from logic.serializers import *
 from rest_framework.request import Request
+import bcrypt
+from logic.utils.utils import send_email,generate_confirmation_token,generate_strong_password
+from time import sleep
+
+class InviteUserView(APIView):
+    authentication_classes = [SupabaseAuthBackend]
+    permission_classes = [OrgadminRequired]
+    
+    def invite_user(self, user, user_org, confirmation_token):
+        try:
+            serializer = UsersSerializer(data=user)
+            if serializer.is_valid():
+                instance = serializer.save()
+                # Adding user to the organization
+                data = UserInfo.objects.get(pk=instance.id)
+                data.org = user_org
+                data.save()
+                # Sending the mail
+                email_response = send_email(user['email'], user['encrypted_password'], confirmation_token)
+                return True
+            return False
+        except Exception as e:
+            print(e)  # Log the error for debugging purposes
+            return False
+
+    def post(self, request):
+        user_org = request.user.org
+
+
+        serializer = InviteUserSerializer(data=request.data)
+        if serializer.is_valid():
+            emails = serializer.validated_data.get('emails', [])
+            failed_invites = []
+            for email in emails:
+                confirmation_token = generate_confirmation_token()
+                password = generate_strong_password()
+                user = {
+                    "email": email,
+                    "encrypted_password": password,
+                    "confirmation_token": confirmation_token,
+                    "raw_app_meta_data": {"provider": "email", "providers": ["email"]},
+                }
+                if not self.invite_user(user, user_org, confirmation_token):
+                    failed_invites.append(email)
+
+            if failed_invites:
+                return Response({"msg": "Some invites failed.", "failed_emails": failed_invites}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            else:
+                return Response({"msg": "Invites sent successfully"}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # def post(self,request):
+    #     serializer = InviteUserSerializer(data=request.data)
+    #     k=''
+    #     if serializer.is_valid():
+    #         emails = serializer.validated_data.get('emails', [])
+    #         for email in emails:
+    #             k+=email
+    #         return Response(k)
+    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+        
+
+ 
+
+
 
 
 # Organization ViewSet

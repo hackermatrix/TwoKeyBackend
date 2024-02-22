@@ -68,3 +68,7 @@ class NUserInfoSerializer(ModelSerializer):
             data['manager'] = instance.manager.name
         return data
     
+class InviteUserSerializer(serializers.Serializer):
+    emails = serializers.ListField(child=serializers.EmailField())
+    class Meta:
+        fields = ["emails"]
