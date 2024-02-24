@@ -3,7 +3,7 @@ info:
   title: TwoKey API
   version: 1.0.0
 paths:
-  /dept/createDepts/:
+  /dept/createDepts:
     post:
       operationId: dept_createDepts_create
       tags:
@@ -26,7 +26,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Department'
           description: ''
-  /dept/deleteDept/{id}/:
+  /dept/deleteDept/{id}:
     delete:
       operationId: dept_deleteDept_destroy
       parameters:
@@ -41,7 +41,7 @@ paths:
       responses:
         '204':
           description: No response body
-  /dept/listDepts/:
+  /dept/listDepts:
     get:
       operationId: dept_listDepts_retrieve
       tags:
@@ -53,7 +53,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Department'
           description: ''
-  /dept/updateDept/{id}/:
+  /dept/updateDept/{id}:
     put:
       operationId: dept_updateDept_update
       parameters:
@@ -83,7 +83,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Department'
           description: ''
-  /file/addDepartment/{file}/:
+  /file/addDepartment/{file}:
     post:
       operationId: file_addDepartment_create
       parameters:
@@ -98,7 +98,7 @@ paths:
       responses:
         '200':
           description: No response body
-  /file/createLocation/:
+  /file/createLocation:
     post:
       operationId: file_createLocation_create
       tags:
@@ -121,7 +121,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AllowedLocation'
           description: ''
-  /file/deleteLocation/{id}/:
+  /file/deleteLocation/{id}:
     delete:
       operationId: file_deleteLocation_destroy
       parameters:
@@ -136,7 +136,7 @@ paths:
       responses:
         '204':
           description: No response body
-  /file/deleteShare/{file}/:
+  /file/deleteShare/{file}:
     delete:
       operationId: file_deleteShare_destroy
       parameters:
@@ -151,7 +151,7 @@ paths:
       responses:
         '204':
           description: No response body
-  /file/editShare/{file}/:
+  /file/editShare/{file}:
     put:
       operationId: file_editShare_update
       parameters:
@@ -182,7 +182,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SharedFile'
           description: ''
-  /file/files/{dept}/:
+  /file/files/{dept}:
     get:
       operationId: file_files_list
       parameters:
@@ -203,7 +203,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/File'
           description: ''
-  /file/getLogs/{file}/:
+  /file/getLogs/{file}:
     get:
       operationId: file_getLogs_retrieve
       parameters:
@@ -222,7 +222,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AccessLog'
           description: ''
-  /file/getPresigned/{file}/:
+  /file/getPresigned/{file}:
     post:
       operationId: file_getPresigned_create
       parameters:
@@ -252,7 +252,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SharedFilesRecepient'
           description: ''
-  /file/listLocation/:
+  /file/listLocation:
     get:
       operationId: file_listLocation_retrieve
       tags:
@@ -264,7 +264,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AllowedLocation'
           description: ''
-  /file/logEvent/{file}/:
+  /file/logEvent/{file}:
     get:
       operationId: file_logEvent_retrieve
       parameters:
@@ -283,7 +283,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AccessLog'
           description: ''
-  /file/shareFile/:
+  /file/shareFile:
     post:
       operationId: file_shareFile_create
       tags:
@@ -307,7 +307,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SharedFile'
           description: ''
-  /file/sharedFileInfo/{file}/:
+  /file/sharedFileInfo/{file}:
     get:
       operationId: file_sharedFileInfo_retrieve
       parameters:
@@ -326,7 +326,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SharedFile'
           description: ''
-  /file/updateLocation/{id}/:
+  /file/updateLocation/{id}:
     put:
       operationId: file_updateLocation_update
       parameters:
@@ -356,7 +356,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AllowedLocation'
           description: ''
-  /org/createOrgs/:
+  /org/createOrgs:
     post:
       operationId: org_createOrgs_create
       tags:
@@ -379,7 +379,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Organization'
           description: ''
-  /org/list_orgs/:
+  /org/list_orgs:
     get:
       operationId: org_list_orgs_retrieve
       tags:
@@ -393,7 +393,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Organization'
           description: ''
-  /role/createRoles/:
+  /role/createRoles:
     post:
       operationId: role_createRoles_create
       tags:
@@ -431,7 +431,7 @@ paths:
       responses:
         '204':
           description: No response body
-  /role/listRoles/:
+  /role/listRoles:
     get:
       operationId: role_listRoles_retrieve
       tags:
@@ -473,7 +473,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Role'
           description: ''
-  /users/deleteUser/{id}/:
+  /users/deleteUser/{id}:
     delete:
       operationId: users_deleteUser_destroy
       parameters:
@@ -518,7 +518,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AUserInfo'
           description: ''
-  /users/getProfileInfo/:
+  /users/getProfileInfo:
     get:
       operationId: users_getProfileInfo_retrieve
       tags:
@@ -530,7 +530,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/NUserInfo'
           description: ''
-  /users/getUserInfo/{id}/:
+  /users/getUserInfo/{id}:
     get:
       operationId: users_getUserInfo_retrieve
       parameters:
@@ -549,7 +549,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AUserInfo'
           description: ''
-  /users/invite/:
+  /users/invite:
     post:
       operationId: users_invite_create
       tags:
@@ -557,7 +557,15 @@ paths:
       responses:
         '200':
           description: No response body
-  /users/list_users/{dept}/:
+  /users/invites/pending:
+    get:
+      operationId: users_invites_pending_retrieve
+      tags:
+      - users
+      responses:
+        '200':
+          description: No response body
+  /users/list_users/{dept}:
     get:
       operationId: users_list_users_retrieve
       parameters:
@@ -576,7 +584,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AUserInfo'
           description: ''
-  /users/updateProfile/:
+  /users/updateProfile:
     put:
       operationId: users_updateProfile_update
       tags:

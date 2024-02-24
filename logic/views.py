@@ -4,7 +4,7 @@ from django.http import QueryDict
 from django.shortcuts import render
 from django.shortcuts import render
 from django.core import exceptions
-from rest_framework.viewsets import GenericViewSet, ViewSet
+from rest_framework.viewsets import GenericViewSet, ViewSet,ModelViewSet
 from rest_framework.views import APIView
 from rest_framework import mixins
 from rest_framework.response import Response
@@ -26,7 +26,7 @@ import bcrypt
 from logic.utils.utils import send_email,generate_confirmation_token,generate_strong_password
 from time import sleep
 
-class InviteUserView(APIView):
+class InviteUserView(ModelViewSet):
     authentication_classes = [SupabaseAuthBackend]
     permission_classes = [OrgadminRequired]
     
@@ -41,13 +41,14 @@ class InviteUserView(APIView):
                 data.save()
                 # Sending the mail
                 email_response = send_email(user['email'], user['encrypted_password'], confirmation_token)
+                print(email_response)
                 return True
             return False
         except Exception as e:
             print(e)  # Log the error for debugging purposes
             return False
 
-    def post(self, request):
+    def invite_driver(self, request):
         user_org = request.user.org
 
 
@@ -74,15 +75,14 @@ class InviteUserView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    # def post(self,request):
-    #     serializer = InviteUserSerializer(data=request.data)
-    #     k=''
-    #     if serializer.is_valid():
-    #         emails = serializer.validated_data.get('emails', [])
-    #         for email in emails:
-    #             k+=email
-    #         return Response(k)
-    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get_pending_invites(self,request):
+        user_org = request.user.org
+        queryset = UserInfo.objects.select_related('org').filter(org=user_org)
+        print(queryset)
+        return Response("CALLED")
+
+
 
 
 
