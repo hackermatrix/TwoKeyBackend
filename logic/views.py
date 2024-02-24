@@ -29,6 +29,7 @@ from time import sleep
 class InviteUserView(ModelViewSet):
     authentication_classes = [SupabaseAuthBackend]
     permission_classes = [OrgadminRequired]
+    serializer_class = InviteUserSerializer
     
     def invite_user(self, user, user_org, confirmation_token):
         try:
@@ -50,8 +51,6 @@ class InviteUserView(ModelViewSet):
 
     def invite_driver(self, request):
         user_org = request.user.org
-
-
         serializer = InviteUserSerializer(data=request.data)
         if serializer.is_valid():
             emails = serializer.validated_data.get('emails', [])
@@ -77,10 +76,11 @@ class InviteUserView(ModelViewSet):
 
 
     def get_pending_invites(self,request):
+        self.serializer_class = NUserGetInfoSerializer 
         user_org = request.user.org
-        queryset = UserInfo.objects.select_related('org').filter(org=user_org)
-        print(queryset)
-        return Response("CALLED")
+        pending_users = Users.objects.filter(email_confirmed_at__isnull=True)
+        self.queryset = UserInfo.objects.select_related('org').filter(org=user_org, id__in=pending_users.values('id'))
+        return self.list(request)
 
 
 
@@ -327,7 +327,6 @@ class NUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSe
         # Update the user_info object with the request data
         serializer = self.get_serializer(user_info, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        print("yooooo")
         serializer.save()
 
         return Response(serializer.data)        
