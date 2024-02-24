@@ -24,18 +24,24 @@ class RoleSerializer(ModelSerializer):
 
 
 class AUserInfoSerializer(ModelSerializer):
+    dept = serializers.SerializerMethodField()
     class Meta:
         model = UserInfo
         fields = ['id','dept','manager','role_priv','is_approved','is_active']
 
+    def get_dept(self,instance):
+        try:
+            dept = instance.dept.name
+            return dept
+        except:
+            return ''
+
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        data.pop('dept')
         data['username'] = instance.username
         data['email'] = instance.email
         data['name'] = instance.name
         data['last_name'] = instance.last_name
-        data ['dept'] = instance.dept.name
         data['profile_pic'] = instance.profile_pic
 
 
@@ -56,16 +62,25 @@ class AUserInfoSerializer(ModelSerializer):
         return data
 
 class NUserInfoSerializer(ModelSerializer):
+    manager = serializers.SerializerMethodField()
     class Meta:
         model = UserInfo
         exclude = ['is_approved','is_authenticated','org','role_priv']
+
+    def get_manager(self,instance):
+        try:
+            manager = instance.manager.name
+            return manager
+        except:
+            return ''
+
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data['org'] = instance.org.name
         data['dept'] = instance.dept.name
         data['role_priv'] = instance.role_priv
-        if(instance.manager is not None):
-            data['manager'] = instance.manager.name
+        # if(instance.manager is not None):
+        #     data['manager'] = instance.manager.name
         return data
     
 class InviteUserSerializer(serializers.Serializer):
