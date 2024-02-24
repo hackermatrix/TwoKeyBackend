@@ -38,10 +38,10 @@ class UserInfo(models.Model):
     dept = models.ForeignKey(Departments, models.DO_NOTHING,default=None)
     manager = models.ForeignKey('self', on_delete=models.SET_NULL, blank=True, null=True)
     # Address Info
-    country = models.CharField(max_length=30,default='')
-    state = models.CharField(max_length=30,default='')
-    city = models.CharField(max_length=30,default='')
-    postal_code = models.IntegerField(default=None,null=True)
+    country = models.CharField(max_length=30,default='',blank=True)
+    state = models.CharField(max_length=30,default='',blank=True)
+    city = models.CharField(max_length=30,default='',blank=True)
+    postal_code = models.IntegerField(default='',null=True,blank=True)
 
     is_approved = models.BooleanField(default=False)
     is_authenticated = models.BooleanField(default=False)

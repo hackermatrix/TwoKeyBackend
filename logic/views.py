@@ -175,7 +175,7 @@ class AUserViewSet(
     permission_classes = [OrgadminRequired]
 
     queryset = UserInfo.objects.all()
-    serializer_class = AUserInfoSerializer
+    serializer_class = AUserGetInfoSerializer
     authentication_classes = [SupabaseAuthBackend]
     lookup_field = "id"
 
@@ -201,6 +201,7 @@ class AUserViewSet(
 
     # Checking the Role's Existance
     def partial_update(self, request, *args, **kwargs):
+
         if "role_priv" in request.data:
             # serializer = RoleSerializer(data=request.data["role_priv"], partial=True)
             # kk = serializer.is_valid()
@@ -222,6 +223,7 @@ class AUserViewSet(
             return super().partial_update(request, *args, **kwargs)
 
     def elevate(self, request, *args, **kwargs):
+        self.serializer_class = AUserSetInfoSerializer
         pk = kwargs.get("pk")
         resp = self.partial_update(request, *args, **kwargs)
         return resp
@@ -301,7 +303,7 @@ class AUserViewSet(
 class NUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSet):
     authentication_classes = [SupabaseAuthBackend]
     permission_classes = [IsAuthenticated]
-    serializer_class = NUserInfoSerializer
+    serializer_class = NUserGetInfoSerializer
     lookup_field = "id"
 
     def get_current_user_info(self, request):
@@ -311,6 +313,7 @@ class NUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSe
         return Response(serializer.data)
 
     def update_profile_data(self, request, **kwargs):
+        # self.serializer_class = NUserSetInfoSerializer
         # Retrieve the object based on the request user's ID
         user_id = request.user.id
         try:
@@ -324,6 +327,7 @@ class NUserViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, GenericViewSe
         # Update the user_info object with the request data
         serializer = self.get_serializer(user_info, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
+        print("yooooo")
         serializer.save()
 
         return Response(serializer.data)        

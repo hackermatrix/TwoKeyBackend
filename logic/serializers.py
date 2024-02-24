@@ -22,8 +22,12 @@ class RoleSerializer(ModelSerializer):
         fields = "__all__"
 
 
+class AUserSetInfoSerializer(ModelSerializer):
+        class Meta:
+            model = UserInfo
+            fields = ['id','dept','manager','role_priv','is_approved','is_active']
 
-class AUserInfoSerializer(ModelSerializer):
+class AUserGetInfoSerializer(ModelSerializer):
     dept = serializers.SerializerMethodField()
     class Meta:
         model = UserInfo
@@ -61,8 +65,15 @@ class AUserInfoSerializer(ModelSerializer):
             
         return data
 
-class NUserInfoSerializer(ModelSerializer):
+class NUserSetInfoSerializer(ModelSerializer):
+    class Meta:
+        model = UserInfo
+        exclude = ['is_approved','is_authenticated','org','role_priv']
+
+
+class NUserGetInfoSerializer(ModelSerializer):
     manager = serializers.SerializerMethodField()
+    dept = serializers.SerializerMethodField()
     class Meta:
         model = UserInfo
         exclude = ['is_approved','is_authenticated','org','role_priv']
@@ -74,10 +85,17 @@ class NUserInfoSerializer(ModelSerializer):
         except:
             return ''
 
+    def get_dept(self,instance):
+        try:
+            dept = instance.dept.name
+            return dept
+        except:
+            return ''
+
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data['org'] = instance.org.name
-        data['dept'] = instance.dept.name
+        # data['dept'] = instance.dept.name
         data['role_priv'] = instance.role_priv
         # if(instance.manager is not None):
         #     data['manager'] = instance.manager.name
