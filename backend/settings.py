@@ -26,7 +26,7 @@ SUPA_PORT= os.environ.get("SUPA_PORT")
 supabase_secret = os.environ.get('JWT_SECRET')
 BREVO_KEY = os.environ.get('BREVO_KEY')
 DEPLOY_URL = os.environ.get('DEPLOY_URL')
-DEBUG = False
+DEBUG = True
 
 
 APPEND_SLASH = False

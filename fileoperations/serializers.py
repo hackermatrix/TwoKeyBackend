@@ -8,7 +8,7 @@ from .utils.supa import supabase , create_signed
 from logic.models import UserInfo
 from decouple import config
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
-from .models import AccessLog, AllowedLocations, Objects, SecCheck, SharedFiles, File_Info
+from .models import AccessLog, AllowedLocations, Objects, SecCheck, SharedFiles, File_Info, Folder
 from logic.serializers import DepartmentSerializer
 
 
@@ -52,6 +52,12 @@ class FileSerializer(ModelSerializer):
     
     def get_profile_pic(self,instance):
         return instance.owner.profile_pic
+
+
+class FolderSerializer(ModelSerializer):
+    class Meta:
+        model = Folder
+        fields = "__all__"
 
 class SecCheckSerializer(serializers.ModelSerializer):
     class Meta:

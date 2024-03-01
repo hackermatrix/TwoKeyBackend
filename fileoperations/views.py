@@ -8,7 +8,7 @@ from django.db import connection, reset_queries
 from django.shortcuts import get_object_or_404
 from django.db.models import Prefetch
 
-from rest_framework.viewsets import GenericViewSet
+from rest_framework.viewsets import GenericViewSet , ModelViewSet
 from rest_framework.views import APIView
 from rest_framework import mixins, generics
 from rest_framework.permissions import IsAuthenticated
@@ -29,6 +29,7 @@ from fileoperations.serializers import (
     SharedFileSerializer,
     SharedFilesRecepient,
     AddDepartmentsSerializer,
+    FolderSerializer
 )
 
 from .utils.supa import create_signed
@@ -124,6 +125,65 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
         self.queryset = Objects.objects.prefetch_related(Prefetch('file_info', queryset=File_Info.objects.prefetch_related('depts'))).filter(sharedfiles__shared_with=user)
         return self.list(request)
 
+
+class FolderViewSet(GenericViewSet,
+mixins.ListModelMixin,
+mixins.CreateModelMixin,
+mixins.DestroyModelMixin,
+):
+    authentication_classes = [SupabaseAuthBackend]
+    permission_classes = [OthersPerm]
+    serializer_class = FolderSerializer
+    queryset = Folder.objects.all()
+
+    def list(self,request):
+        user_org = request.user.org.id
+        queryset = Folder.objects.filter(org=user_org)
+        serializer = self.get_serializer(queryset,many=True)
+        return Response(serializer.data)
+        
+    def create(self,request):
+        user = request.user
+        owner_org_id = user.org.id
+        owner_dept  = user.dept.id
+        request.data['org'] = owner_org_id
+        request.data['dept'] = owner_dept 
+        request.data['owner'] = user.id
+        serializer = self.get_serializer(data=request.data)
+        if(serializer.is_valid(raise_exception=True)):
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response({"error":"Invalid data"})
+    
+    def destroy(self, request, pk=None):
+        user = request.user.id
+        try:
+            folder = Folder.objects.get(pk=pk,owner=user)
+        except Folder.DoesNotExist:
+            return Response({"error": "Folder does not exist"}, status=status.HTTP_404_NOT_FOUND)
+
+        self.perform_destroy(folder)
+        return Response({'msg':"folder deleted"},status=status.HTTP_204_NO_CONTENT)
+
+    # def partial_update(self, request, pk=None):
+    #     try:
+    #         folder = Folder.objects.get(pk=pk,owner=user)
+    #     except Folder.DoesNotExist:
+    #         return Response({"error": "Folder does not exist"}, status=status.HTTP_404_NOT_FOUND)
+    #     # request_data = request.data.copy()
+    #     request.data['org'] = owner_org_ids 
+    #     request.data['owner'] = user.id
+    #     request_data.pop('dept', None)      
+    #     print(request.data)
+    #     serializer = self.get_serializer(folder, data=request.data, partial=True)
+    #     if serializer.is_valid(raise_exception=True):
+    #         serializer.save()
+    #         return Response(serializer.data)
+    #     else:
+    #         return Response({"error": "Invalid data"}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class AddDepartmentsToFileView(generics.GenericAPIView):    
     authentication_classes = [SupabaseAuthBackend]
     permission_classes = [OrgadminRequired]
@@ -148,8 +208,6 @@ class AddDepartmentsToFileView(generics.GenericAPIView):
                return Response({'detail': 'Departments added successfully'}, status=status.HTTP_200_OK)
 
            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
 
 class ExtraChecksMixin:
     # Check if the user creating or deleting a share is the owner of the file

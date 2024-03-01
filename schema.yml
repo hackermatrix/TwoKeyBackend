@@ -203,6 +203,59 @@ paths:
                 items:
                   $ref: '#/components/schemas/File'
           description: ''
+  /file/folder:
+    get:
+      operationId: file_folder_list
+      tags:
+      - file
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Folder'
+          description: ''
+    post:
+      operationId: file_folder_create
+      tags:
+      - file
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Folder'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Folder'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Folder'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Folder'
+          description: ''
+  /file/folder/{id}:
+    delete:
+      operationId: file_folder_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this folder.
+        required: true
+      tags:
+      - file
+      responses:
+        '204':
+          description: No response body
   /file/getLogs/{file}:
     get:
       operationId: file_getLogs_retrieve
@@ -503,20 +556,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AUserInfo'
+              $ref: '#/components/schemas/AUserGetInfo'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/AUserInfo'
+              $ref: '#/components/schemas/AUserGetInfo'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/AUserInfo'
+              $ref: '#/components/schemas/AUserGetInfo'
         required: true
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AUserInfo'
+                $ref: '#/components/schemas/AUserGetInfo'
           description: ''
   /users/getProfileInfo:
     get:
@@ -528,7 +581,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NUserInfo'
+                $ref: '#/components/schemas/NUserGetInfo'
           description: ''
   /users/getUserInfo/{id}:
     get:
@@ -547,16 +600,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AUserInfo'
+                $ref: '#/components/schemas/AUserGetInfo'
           description: ''
   /users/invite:
     post:
       operationId: users_invite_create
       tags:
       - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InviteUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InviteUser'
+        required: true
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InviteUser'
+          description: ''
   /users/invites/pending:
     get:
       operationId: users_invites_pending_retrieve
@@ -564,7 +633,11 @@ paths:
       - users
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InviteUser'
+          description: ''
   /users/list_users/{dept}:
     get:
       operationId: users_list_users_retrieve
@@ -582,7 +655,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AUserInfo'
+                $ref: '#/components/schemas/AUserGetInfo'
           description: ''
   /users/updateProfile:
     put:
@@ -593,24 +666,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NUserInfo'
+              $ref: '#/components/schemas/NUserGetInfo'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/NUserInfo'
+              $ref: '#/components/schemas/NUserGetInfo'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/NUserInfo'
+              $ref: '#/components/schemas/NUserGetInfo'
         required: true
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NUserInfo'
+                $ref: '#/components/schemas/NUserGetInfo'
           description: ''
 components:
   schemas:
-    AUserInfo:
+    AUserGetInfo:
       type: object
       properties:
         id:
@@ -618,7 +691,7 @@ components:
           format: uuid
         dept:
           type: string
-          format: uuid
+          readOnly: true
         manager:
           type: string
           format: uuid
@@ -631,6 +704,7 @@ components:
         is_active:
           type: boolean
       required:
+      - dept
       - id
     AccessLog:
       type: object
@@ -740,16 +814,55 @@ components:
             $ref: '#/components/schemas/Department'
       required:
       - depts
-    GisFeatureEnum:
-      type: string
-      enum:
-      - Feature
-    NUserInfo:
+    Folder:
       type: object
       properties:
         id:
           type: string
           format: uuid
+        name:
+          type: string
+          maxLength: 20
+        org:
+          type: string
+          format: uuid
+        owner:
+          type: string
+          format: uuid
+          nullable: true
+        dept:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - name
+      - org
+    GisFeatureEnum:
+      type: string
+      enum:
+      - Feature
+    InviteUser:
+      type: object
+      properties:
+        emails:
+          type: array
+          items:
+            type: string
+            format: email
+      required:
+      - emails
+    NUserGetInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        manager:
+          type: string
+          readOnly: true
+        dept:
+          type: string
+          readOnly: true
         username:
           type: string
           nullable: true
@@ -788,15 +901,10 @@ components:
           nullable: true
         is_active:
           type: boolean
-        dept:
-          type: string
-          format: uuid
-        manager:
-          type: string
-          format: uuid
-          nullable: true
       required:
+      - dept
       - id
+      - manager
     Organization:
       type: object
       properties:

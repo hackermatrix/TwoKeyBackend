@@ -2,11 +2,16 @@ from django.urls import path,include, re_path
 from .views import *
 from django.urls import path
 from .views import FileListing, ShareViewSetSender, ShareViewSetReceiver
+from rest_framework.routers import DefaultRouter
+
+router = DefaultRouter(trailing_slash=False)
+router.register(r'folder',FolderViewSet,basename='folder')
 
 urlpatterns = [
     # File Listing and Operations
     re_path(r'files/?(?P<dept>[\w-]*)', FileListing.as_view(), name="fileListing"),
     re_path(r'addDepartment/(?P<file>[\w-]*)', AddDepartmentsToFileView.as_view(), name='add_departments_to_file'),
+    
     
     # Shared File Operations
     re_path(r'shareFile', ShareViewSetSender.as_view({'post': 'share_file'}), name="shareFile"),
@@ -29,3 +34,5 @@ urlpatterns = [
 
     # path('test',SetDepartment.as_view(),name="DELETE This ENDPT")
 ]
+
+urlpatterns += router.urls

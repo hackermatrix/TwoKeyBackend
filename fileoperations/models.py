@@ -50,8 +50,15 @@ class File_Info(models.Model):
     class Meta:
         db_table = "file_info"
 
-
-
+class Folder(models.Model):
+    id = models.UUIDField(primary_key=True,default=uuid4)
+    name = models.CharField(max_length=20)
+    owner = models.ForeignKey(UserInfo,on_delete=models.CASCADE,blank=True, null=True,db_column='owner')
+    org = models.UUIDField()
+    dept = models.ForeignKey(Departments,on_delete=models.SET_NULL,blank=True,null=True)
+    
+    class Meta:
+        db_table = "folder"
 
 # managed
 
