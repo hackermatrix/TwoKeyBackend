@@ -41,15 +41,6 @@ class Objects(models.Model):
         db_table = 'storage"."objects'
         unique_together = (('bucket', 'name'),)
 
-class File_Info(models.Model):
-    id = models.UUIDField(primary_key=True,default=uuid4)
-    file = models.ForeignKey(Objects,on_delete=models.CASCADE,related_name="file_info")
-    org = models.ForeignKey(Organizations,on_delete=models.DO_NOTHING)
-    depts = models.ManyToManyField(Departments)
-
-    class Meta:
-        db_table = "file_info"
-
 class Folder(models.Model):
     id = models.UUIDField(primary_key=True,default=uuid4)
     name = models.CharField(max_length=20)
@@ -59,6 +50,18 @@ class Folder(models.Model):
     
     class Meta:
         db_table = "folder"
+class File_Info(models.Model):
+    id = models.UUIDField(primary_key=True,default=uuid4)
+    file = models.ForeignKey(Objects,on_delete=models.CASCADE,related_name="file_info")
+    org = models.ForeignKey(Organizations,on_delete=models.DO_NOTHING)
+    depts = models.ManyToManyField(Departments)
+    folder = models.ForeignKey('Folder', on_delete=models.SET_NULL, related_name='files', null=True, blank=True)
+
+
+    class Meta:
+        db_table = "file_info"
+
+
 
 # managed
 

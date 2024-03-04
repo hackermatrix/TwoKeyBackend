@@ -18,6 +18,10 @@ urlpatterns = [
     re_path(r'sharedFileInfo/(?P<file>[\w-]*)', ShareViewSetSender.as_view({'get': 'get_file_info'}), name="sharedFileInfo"),
     re_path(r'deleteShare/(?P<file>[\w-]*)', ShareViewSetSender.as_view({'delete': 'delete_share'}), name='deleteShare'),
     re_path(r'editShare/(?P<file>[\w-]*)',ShareViewSetSender.as_view({'put':'edit_access'}),name="Edit shared user"),
+
+    # Folder Interactions
+    re_path(r'folder/addFile/(?P<folder_id>[\w-]*)',FolderInteractViewSet.as_view({"post":"add_file_to_folder"}),name="add file to folder"),
+    re_path(r'folder/listFiles/(?P<folder_id>[\w-]*)',FolderInteractViewSet.as_view({"get":"list_files_in_current_folder"},name="get files inside of the folder")),
     
     # Get a Presigned URL for a Shared File
     re_path(r'getPresigned/(?P<file>[\w-]*)', ShareViewSetReceiver.as_view({'post': 'get_shared_file_url'}), name="getPresignedUrl"),

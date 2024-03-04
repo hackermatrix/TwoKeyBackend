@@ -29,7 +29,8 @@ from fileoperations.serializers import (
     SharedFileSerializer,
     SharedFilesRecepient,
     AddDepartmentsSerializer,
-    FolderSerializer
+    FolderSerializer,
+    FolderInteractSerializer
 )
 
 from .utils.supa import create_signed
@@ -38,6 +39,33 @@ from django.utils.decorators import method_decorator
 
 
 Cache_TTL = 60
+
+
+class ExtraChecksMixin:
+    # Check if the user creating or deleting a share is the owner of the file
+    def check_file_ownership(self, request, file_id):
+        try:
+            file_object = Objects.objects.get(id=file_id)
+            file_owner = file_object.owner
+        except Exception:
+            print(Exception)
+            return False
+        current_user = request.user
+        if current_user == file_owner:
+            return True
+        return False
+    def check_folder_ownership(self, request, folder_id):
+        try:
+            folder_object = Folder.objects.get(id=folder_id)
+            folder_owner = folder_object.owner.id
+        except Exception:
+            return False
+        current_user = request.user.id
+        
+        if current_user == folder_owner:
+            return True
+        return False
+
 
 class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
     serializer_class = FileSerializer
@@ -126,6 +154,33 @@ class FileListing(mixins.ListModelMixin, generics.GenericAPIView):
         return self.list(request)
 
 
+class AddDepartmentsToFileView(generics.GenericAPIView):    
+    authentication_classes = [SupabaseAuthBackend]
+    permission_classes = [OrgadminRequired]
+    def post(self, request, file):
+           file_info = get_object_or_404(File_Info, file=file)
+           serializer = AddDepartmentsSerializer(data=request.data)
+
+           if serializer.is_valid():
+               department_ids = serializer.validated_data.get('department_ids', [])
+
+               # Validate that each department ID exists
+               for department_id in department_ids:
+                   get_object_or_404(Departments, id=department_id)
+
+               # Check if departments are already associated and add only unique departments
+               unique_department_ids = set(department_ids) - set(file_info.depts.values_list('id', flat=True))
+
+               # Add the unique departments to the File_Info instance
+               file_info.depts.add(*unique_department_ids)
+               file_info.save()
+
+               return Response({'detail': 'Departments added successfully'}, status=status.HTTP_200_OK)
+
+           return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
 class FolderViewSet(GenericViewSet,
 mixins.ListModelMixin,
 mixins.CreateModelMixin,
@@ -138,7 +193,8 @@ mixins.DestroyModelMixin,
 
     def list(self,request):
         user_org = request.user.org.id
-        queryset = Folder.objects.filter(org=user_org)
+        user_id = request.user.id
+        queryset = Folder.objects.filter(org=user_org,owner=user_id)
         serializer = self.get_serializer(queryset,many=True)
         return Response(serializer.data)
         
@@ -184,43 +240,45 @@ mixins.DestroyModelMixin,
     #         return Response({"error": "Invalid data"}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AddDepartmentsToFileView(generics.GenericAPIView):    
+
+
+class FolderInteractViewSet(GenericViewSet,mixins.ListModelMixin,ExtraChecksMixin):
     authentication_classes = [SupabaseAuthBackend]
-    permission_classes = [OrgadminRequired]
-    def post(self, request, file):
-           file_info = get_object_or_404(File_Info, file=file)
-           serializer = AddDepartmentsSerializer(data=request.data)
+    permission_classes = [OthersPerm]
+    
+    def add_file_to_folder(self,request,folder_id):
 
-           if serializer.is_valid():
-               department_ids = serializer.validated_data.get('department_ids', [])
-
-               # Validate that each department ID exists
-               for department_id in department_ids:
-                   get_object_or_404(Departments, id=department_id)
-
-               # Check if departments are already associated and add only unique departments
-               unique_department_ids = set(department_ids) - set(file_info.depts.values_list('id', flat=True))
-
-               # Add the unique departments to the File_Info instance
-               file_info.depts.add(*unique_department_ids)
-               file_info.save()
-
-               return Response({'detail': 'Departments added successfully'}, status=status.HTTP_200_OK)
-
-           return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class ExtraChecksMixin:
-    # Check if the user creating or deleting a share is the owner of the file
-    def check_file_ownership(self, request, file_id):
         try:
-            file_object = Objects.objects.get(id=file_id)
-            file_owner = file_object.owner
-        except Exception:
-            return False
-        current_user = request.user
-        if current_user == file_owner:
-            return True
-        return False
+            file_id = request.data['file_id']
+        except:
+            return Response({"file_id":"field required"})
+        serializer = FolderInteractSerializer(data={"file_id":file_id,"folder_id":folder_id})
+        if(serializer.is_valid(raise_exception=True)):
+            if(1==1):
+                file_info_rec = File_Info.objects.get(file=file_id)
+                file_info_rec.folder = Folder.objects.get(id=folder_id)
+                file_info_rec.save()
+                return Response("File added successfully",status=status.HTTP_200_OK)
+            else:
+                return Response({"error":"Invalid file or folder"})
+        return Response({"error":"Data error"},status=status.HTTP_400_BAD_REQUEST)
+
+
+
+    def list_files_in_current_folder(self,request,folder_id):
+        try:
+            folder_id = uuid.UUID(folder_id)
+        except ValueError:
+            return Response({"error": "Invalid folder_id"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        if(self.check_folder_ownership(request,folder_id)):
+            files_in_folder = File_Info.objects.filter(folder_id=folder_id)
+            serializer = FileMetaSerializer(files_in_folder, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response({"error":"You do not own this folder"},status=status.HTTP_401_UNAUTHORIZED)
+
+
 
 
 #  Below are the endpoints used at the Sender's side.

@@ -256,6 +256,36 @@ paths:
       responses:
         '204':
           description: No response body
+  /file/folder/addFile/{folder_id}:
+    post:
+      operationId: file_folder_addFile_create
+      parameters:
+      - in: path
+        name: folder_id
+        schema:
+          type: string
+          pattern: ^[\w-]*$
+        required: true
+      tags:
+      - file
+      responses:
+        '200':
+          description: No response body
+  /file/folder/listFiles/{folder_id}:
+    get:
+      operationId: file_folder_listFiles_retrieve
+      parameters:
+      - in: path
+        name: folder_id
+        schema:
+          type: string
+          pattern: ^[\w-]*$
+        required: true
+      tags:
+      - file
+      responses:
+        '200':
+          description: No response body
   /file/getLogs/{file}:
     get:
       operationId: file_getLogs_retrieve

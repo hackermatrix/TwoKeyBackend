@@ -59,6 +59,15 @@ class FolderSerializer(ModelSerializer):
         model = Folder
         fields = "__all__"
 
+class FolderInteractSerializer(serializers.Serializer):
+    file_id = serializers.UUIDField()
+    folder_id = serializers.UUIDField()
+
+    class Meta:
+        fields = ['file_id','folder_id']
+
+
+
 class SecCheckSerializer(serializers.ModelSerializer):
     class Meta:
         model = SecCheck
