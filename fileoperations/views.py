@@ -272,8 +272,18 @@ class FolderInteractViewSet(GenericViewSet,mixins.ListModelMixin,ExtraChecksMixi
             return Response({"error": "Invalid folder_id"}, status=status.HTTP_400_BAD_REQUEST)
             
         if(self.check_folder_ownership(request,folder_id)):
-            files_in_folder = File_Info.objects.filter(folder_id=folder_id)
-            serializer = FileMetaSerializer(files_in_folder, many=True)
+            # files_in_folder = File_Info.objects.filter(folder_id=folder_id)
+
+            files_in_folder = (
+                Objects.objects.select_related("owner")
+                .prefetch_related(Prefetch('file_info', queryset=File_Info.objects.prefetch_related('depts')))
+                .filter(owner__org=request.user.org, bucket_id="TwoKey",file_info__folder_id=folder_id)
+                .exclude(name=".emptyFolderPlaceholder")
+                .order_by("-created_at")
+            )
+
+            serializer = FileSerializer(files_in_folder, many=True)
+
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response({"error":"You do not own this folder"},status=status.HTTP_401_UNAUTHORIZED)
